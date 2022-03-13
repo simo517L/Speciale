@@ -1,20 +1,22 @@
-library("spatstat.data",lib.loc="/home/au591455/Rstuff/library")
-library("spatstat.geom",lib.loc="/home/au591455/Rstuff/library")
-library("spatstat.random",lib.loc="/home/au591455/Rstuff/library")
-library("spatstat.core",lib.loc="/home/au591455/Rstuff/library")
-library("spatstat.linnet",lib.loc="/home/au591455/Rstuff/library")
-library("spatstat",lib.loc="/home/au591455/Rstuff/library")
+liblocation = "/home/au591455/Rstuff/library"
+#liblocation = NULL
+library("spatstat.data",lib.loc=liblocation )
+library("spatstat.geom",lib.loc=liblocation )
+library("spatstat.random",lib.loc=liblocation )
+library("spatstat.core",lib.loc=liblocation )
+library("spatstat.linnet",lib.loc=liblocation )
+library("spatstat",lib.loc=liblocation )
 library(parallel)
-library("codetools",lib.loc="/home/au591455/Rstuff/library")
-library("iterators",lib.loc="/home/au591455/Rstuff/library")
-library("tictoc",lib.loc="/home/au591455/Rstuff/library")
-library("foreach",lib.loc="/home/au591455/Rstuff/library")
-library("doParallel",lib.loc="/home/au591455/Rstuff/library")
+library("codetools",lib.loc=liblocation )
+library("iterators",lib.loc=liblocation )
+library("tictoc",lib.loc=liblocation )
+library("foreach",lib.loc=liblocation )
+library("doParallel",lib.loc=liblocation )
 setwd("/home/au591455/Rstuff/Results") 
-
+#setwd("C:/Users/simon/Desktop/TestR") 
 registerDoParallel(2)
 nn =10000
-mm=50
+mm=20
 timeofpowertest  =c (1:6)
 squares = list(c(3,1),c(2,2),c(3,2),c(4,2),c(3,3),c(3,4))
 
@@ -227,7 +229,7 @@ poweroftest = function(Outlier,Data,name,n,m,squares,path_of_log){
   for (q in c(2:(n/m))){
     ResultpowerM1temp2 <- foreach (i= c((q*m-(m-1)):(q*m)), .combine="cbind", .packages = c("spatstat")) %:%
       foreach (j= c(1:length(squares)), .combine="c", .packages = c("spatstat")) %dopar% {
-        QQQ = OutlierPPP_Permu(Outlier = Outlier[[i]], PPP = Data[c(i*20-19,i*20)], nx=squares[[j]][1],ny=squares[[j]][2],minpoints =4)
+        QQQ = OutlierPPP_Permu(Outlier = Outlier[[i]], PPP = Data[c((i*20-19):(i*20))], nx=squares[[j]][1],ny=squares[[j]][2],minpoints =4)
         QQQ$p.value
       }
     if (!prod(ResultpowerM1temp2 == ResultpowerM1temp1)){
