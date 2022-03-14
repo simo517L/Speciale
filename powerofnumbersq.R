@@ -17,16 +17,15 @@ setwd("/home/au591455/Rstuff/Results")
 registerDoParallel(2)
 nn =10000
 mm=20
-timeofpowertest  =c (1:6)
+timeofpowertest  =c(1:6)
 squares = list(c(3,1),c(2,2),c(3,2),c(4,2),c(3,3),c(3,4))
 
 
 Data = rpoispp(100,nsim=20*nn)
 
-
-
 Matern4a = rMaternI(100,r=0.05,nsim=nn)
 for (i in c(1:mm)){
+  
   grid1 = quadrats(Matern4a[[i]],nx=3,ny=4)
   splitMatern = split(Matern4a[[i]],f=grid1)
   count = 0
