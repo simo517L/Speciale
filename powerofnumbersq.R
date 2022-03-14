@@ -104,6 +104,7 @@ for (i in c(1:mm)){
 poistest = rpoispp(100,nsim=nn)
 
 logpath = "/home/au591455/Rstuff/Results/log.txt"
+#logpath = "C:/Users/simon/Desktop/TestR/log.txt"
 fileConn<-file(logpath)
 writeLines("Start UP", fileConn)
 poweroftest = function(Outlier,Data,name,n,m,squares,path_of_log){
@@ -112,10 +113,39 @@ poweroftest = function(Outlier,Data,name,n,m,squares,path_of_log){
     ##### preparations ----------------
     n <- dim(foos1)[1]
     m1 <- dim(foos1)[2]
-    stopifnot (m1 > 1) # need at least two per group
-    stopifnot(dim(foos2)[1] == n) # dimensions
+    if (m1 < 2){
+      datname <- paste( deparse(substitute(foos1)),"and", deparse(substitute(foos2)))
+      ptt <- list(statistic = NaN, 
+                  p.value = NaN, 
+                  alternative = "foos1 is not a matrix", 
+                  method = "No method", 
+                  data.name = datname)
+      class(ptt) <- "htest"
+      return(ptt)
+      
+      
+    } # need at least two per group
+    if(dim(foos2)[1] != n){
+      datname <- paste( deparse(substitute(foos1)),"and", deparse(substitute(foos2)))
+      ptt <- list(statistic = NaN, 
+                  p.value = NaN, 
+                  alternative = "foos2 does not have the same lenght as foos1", 
+                  method = "No method", 
+                  data.name = datname)
+      class(ptt) <- "htest"
+      return(ptt)
+    } # dimensions
     m2 <- dim(foos2)[2]
-    stopifnot (m2 > 1) # need at least two per group
+    if (m2 < 2){
+      datname <- paste( deparse(substitute(foos1)),"and", deparse(substitute(foos2)))
+      ptt <- list(statistic = NaN, 
+                  p.value = NaN, 
+                  alternative = "foos2 is not a matrix", 
+                  method = "No method", 
+                  data.name = datname)
+      class(ptt) <- "htest"
+      return(ptt)
+    } # need at least two per group
     m <- m1+m2
     foos <- cbind(foos1, foos2)
     # get the permutations. 
