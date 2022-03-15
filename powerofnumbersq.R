@@ -16,7 +16,7 @@ setwd("/home/au591455/Rstuff/Results")
 #setwd("C:/Users/simon/Desktop/TestR") 
 registerDoParallel(2)
 nn =10000
-mm=20
+mm=40
 timeofpowertest  =c(1:6)
 squares = list(c(3,1),c(2,2),c(3,2),c(4,2),c(3,3),c(3,4))
 
@@ -256,25 +256,16 @@ poweroftest = function(Outlier,Data,name,n,m,squares,path_of_log){
   
   ResultpowerM1 = ResultpowerM1temp1
   for (q in c(2:(n/m))){
-    ResultpowerM1temp2 <- foreach (i= c((q*m-(m-1)):(q*m)), .combine="cbind", .packages = c("spatstat")) %:%
+    ResultpowerM1temp1 <- foreach (i= c((q*m-(m-1)):(q*m)), .combine="cbind", .packages = c("spatstat")) %:%
       foreach (j= c(1:length(squares)), .combine="c", .packages = c("spatstat")) %dopar% {
         QQQ = OutlierPPP_Permu(Outlier = Outlier[[i]], PPP = Data[c((i*20-19):(i*20))], nx=squares[[j]][1],ny=squares[[j]][2],minpoints =4)
         QQQ$p.value
       }
-    if (!prod(ResultpowerM1temp2 == ResultpowerM1temp1)){
-      ResultpowerM1  = cbind(ResultpowerM1,ResultpowerM1temp2)
-      
+      ResultpowerM1  = cbind(ResultpowerM1,ResultpowerM1temp1)
       saveRDS(ResultpowerM1,file = name)
-      ResultpowerM1temp1 = ResultpowerM1temp2
-    } else{
-      TEMPM = matrix(NaN,nrow = 6,ncol=5)
-      ResultpowerM1  = cbind(ResultpowerM1,TEMPM)
-      
-      saveRDS(ResultpowerM1,file = name)
-    }
     tempC = readLines(path_of_log)
     procent = q*m/n
-    writeLines(c(tempC,paste(name,":",procent," % done")),path_of_log)
+    writeLines(c(tempC,paste(name,":",procent," % done", Sys.time())),path_of_log)
     }
 }
 
