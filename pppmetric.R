@@ -107,10 +107,32 @@ nearest_pointdist = function(X,Y){
 nearest_point_metric = function(X,Y){
   return(nearest_pointdist(X,Y)+nearest_pointdist(Y,X))
 }
-X = rpoint(10)
-Y = rpoint(10)
+X = rpoint(3)
+Y = rpoint(3)
+Z = rpoint(3)
 spike_timedist(X,Y)
-nearest_point_metric(X,Y)
+nearest_point_metric(X,Y) + nearest_point_metric(Y,Z) - nearest_point_metric(X,Z)
+
+for (i in c(1:1000)){
+  X = rpoint(3)
+  Y = rpoint(1)
+  Z = rpoint(1)
+  Result =  nearest_point_metric(X,Y) + nearest_point_metric(Y,Z) - nearest_point_metric(X,Z)
+  if(Result < 0){
+    XR = X
+    YR = Y
+    ZR = Z
+  }
+}
+
+marks(XR) <- factor("x")
+marks(YR) <- factor("y")
+marks(ZR) <- factor("z")
+
+plot(superimpose(XR,YR,ZR), main = "")
+
+nearest_point_metric(XR,YR) + nearest_point_metric(YR,ZR) - nearest_point_metric(XR,ZR)
+
 
 distMppp = function(X,nx=3,ny=ny,method=1,minpoints=20,sumfunc="Kest"){
   pvaluetrans = function(p,method){

@@ -12,8 +12,7 @@ library("iterators",lib.loc=liblocation )
 library("tictoc",lib.loc=liblocation )
 library("foreach",lib.loc=liblocation )
 library("doParallel",lib.loc=liblocation )
-setwd("/home/au591455/Rstuff/Results") 
-#setwd("C:/Users/simon/Desktop/TestR") 
+
 registerDoParallel(2)
 nn =10000
 mm=40
@@ -103,11 +102,17 @@ for (i in c(1:mm)){
 }
 poistest = rpoispp(100,nsim=nn)
 
+
+poweroftest = function(Outlier,Data,name,n,m,squares,newlog = F){
+setwd("/home/au591455/Rstuff/Results") 
+#setwd("C:/Users/simon/Desktop/TestR") 
 logpath = "/home/au591455/Rstuff/Results/log.txt"
 #logpath = "C:/Users/simon/Desktop/TestR/log.txt"
-fileConn<-file(logpath)
-writeLines("Start UP", fileConn)
-poweroftest = function(Outlier,Data,name,n,m,squares,path_of_log){
+path_of_log<-file(logpath)
+if (newlog){
+  writeLines("Start UP", path_of_log)
+}
+
   studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000)
   {
     ##### preparations ----------------
@@ -261,51 +266,52 @@ poweroftest = function(Outlier,Data,name,n,m,squares,path_of_log){
         QQQ = OutlierPPP_Permu(Outlier = Outlier[[i]], PPP = Data[c((i*20-19):(i*20))], nx=squares[[j]][1],ny=squares[[j]][2],minpoints =4)
         QQQ$p.value
       }
-      ResultpowerM1  = cbind(ResultpowerM1,ResultpowerM1temp1)
-      saveRDS(ResultpowerM1,file = name)
+    ResultpowerM1  = cbind(ResultpowerM1,ResultpowerM1temp1)
+    saveRDS(ResultpowerM1,file = name)
     tempC = readLines(path_of_log)
     procent = q*m/n
     writeLines(c(tempC,paste(name,":",procent," % done", Sys.time())),path_of_log)
-    }
+  }
+  close(path_of_log)
 }
 
 
 
 tic()
-poweroftest(Outlier = Matern4a,Data=Data,name ="PowerMaternA.Rdata",n=nn,m=mm,squares = squares,path_of_log = fileConn  )
+poweroftest(Outlier = Matern4a,Data=Data,name ="PowerMaternA.Rdata",n=nn,m=mm,squares = squares,newlog=T )
 T1 = toc()
 timeofpowertest[1] = T1$toc-T1$tic
 
 tic()
-poweroftest(Outlier = Matern4b,Data=Data,name ="PowerMaternB.Rdata",n=nn,m=mm,squares = squares,path_of_log = fileConn  )
+poweroftest(Outlier = Matern4b,Data=Data,name ="PowerMaternB.Rdata",n=nn,m=mm,squares = squares)
 T1 = toc()
 timeofpowertest[2] = T1$toc-T1$tic
 
 
 tic()
-poweroftest(Outlier = Clust4a ,Data=Data,name ="PowerClusterA.Rdata",n=nn,m=mm,squares = squares,path_of_log = fileConn  )
+poweroftest(Outlier = Clust4a ,Data=Data,name ="PowerClusterA.Rdata",n=nn,m=mm,squares = squares )
 T1 = toc()
 timeofpowertest[3] = T1$toc-T1$tic
 
 tic()
-poweroftest(Outlier = Clust4b ,Data=Data,name ="PowerClusterB.Rdata",n=nn,m=mm,squares = squares ,path_of_log = fileConn )
+poweroftest(Outlier = Clust4b ,Data=Data,name ="PowerClusterB.Rdata",n=nn,m=mm,squares = squares)
 T1 = toc()
 timeofpowertest[4] = T1$toc-T1$tic
 
 
 tic()
-poweroftest(Outlier = Clust4c ,Data=Data,name ="PowerClusterC.Rdata",n=nn,m=mm,squares = squares ,path_of_log = fileConn )
+poweroftest(Outlier = Clust4c ,Data=Data,name ="PowerClusterC.Rdata",n=nn,m=mm,squares = squares )
 T1 = toc()
 timeofpowertest[5] = T1$toc-T1$tic
 
 
 tic()
-poweroftest(Outlier = poistest ,Data=Data,name ="Powerpois.Rdata",n=nn,m=mm,squares = squares,path_of_log = fileConn  )
+poweroftest(Outlier = poistest ,Data=Data,name ="Powerpois.Rdata",n=nn,m=mm,squares = squares )
 T1 = toc()
 timeofpowertest[6] = T1$toc-T1$tic
 
 save(timeofpowertest,file = "timeofpowertest.Rdata")
-close(fileConn)
+
 stopImplicitCluster()
 
 
