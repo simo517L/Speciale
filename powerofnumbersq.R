@@ -13,99 +13,17 @@ library("tictoc",lib.loc=liblocation )
 library("foreach",lib.loc=liblocation )
 library("doParallel",lib.loc=liblocation )
 
-registerDoParallel(2)
-nn =10000
-mm=40
+registerDoParallel(3)
+squares = list(c(3,1),c(2,2),c(3,2),c(4,2),c(3,3),c(3,4))
+mm=20
 timeofpowertest  =c(1:6)
 squares = list(c(3,1),c(2,2),c(3,2),c(4,2),c(3,3),c(3,4))
-
-
-Data = rpoispp(100,nsim=20*nn)
-
-Matern4a = rMaternI(100,r=0.05,nsim=nn)
-for (i in c(1:mm)){
-  
-  grid1 = quadrats(Matern4a[[i]],nx=3,ny=4)
-  splitMatern = split(Matern4a[[i]],f=grid1)
-  count = 0
-  for (j in c(1:length(splitMatern))){
-    if (splitMatern[[j]]$n>3){
-      count = count +1
-    }
-  }
-  if (count < 3){
-    Matern4a[[i]] = rMaternI(100,r=0.05)
-    i = i-1
-  }
-}
-
-Matern4b = rMaternI(100,r=0.02,nsim=nn)
-for (i in c(1:mm)){
-  grid1 = quadrats(Matern4b[[i]],nx=3,ny=4)
-  splitMatern = split(Matern4b[[i]],f=grid1)
-  count = 0
-  for (j in c(1:length(splitMatern))){
-    if (splitMatern[[j]]$n>3){
-      count = count +1
-    }
-  }
-  if (count < 3){
-    Matern4b[[i]] = rMaternI(100,r=0.02)
-    i = i-1
-  }
-}
-
-Clust4a = rMatClust(100,scale=0.1,mu=1,nsim=nn)
-for (i in c(1:mm)){
-  grid1 = quadrats(Clust4a[[i]],nx=3,ny=4)
-  splitMatern = split(Clust4a[[i]],f=grid1)
-  count = 0
-  for (j in c(1:length(splitMatern))){
-    if (splitMatern[[j]]$n>3){
-      count = count +1
-    }
-  }
-  if (count < 3){
-    Clust4a[[i]] = rMatClust(100,scale=0.1,mu=1)
-    i = i-1
-  }
-}
-Clust4b = rMatClust(100,scale=0.1,mu=4,nsim=nn)
-for (i in c(1:mm)){
-  grid1 = quadrats(Clust4b[[i]],nx=3,ny=4)
-  splitMatern = split(Clust4b[[i]],f=grid1)
-  count = 0
-  for (j in c(1:length(splitMatern))){
-    if (splitMatern[[j]]$n>3){
-      count = count +1
-    }
-  }
-  if (count < 3){
-    Clust4b[[i]] = rMatClust(100,scale=0.1,mu=4)
-    i = i-1
-  }
-}
-Clust4c = rMatClust(100,scale=0.05,mu=4,nsim=nn)
-for (i in c(1:mm)){
-  grid1 = quadrats(Clust4c[[i]],nx=3,ny=4)
-  splitMatern = split(Clust4c[[i]],f=grid1)
-  count = 0
-  for (j in c(1:length(splitMatern))){
-    if (splitMatern[[j]]$n>3){
-      count = count +1
-    }
-  }
-  if (count < 3){
-    Clust4c[[i]] = rMatClust(100,scale=0.05,mu=4)
-    i = i-1
-  }
-}
-poistest = rpoispp(100,nsim=nn)
-
-
-poweroftest = function(Outlier,Data,name,n,m,squares,newlog = F){
 setwd("/home/au591455/Rstuff/Results") 
 #setwd("C:/Users/simon/Desktop/TestR") 
+poweroftest = function(Outlier,Data,name,m,squares,newlog = F){
+  n = length(Outlier)
+  setwd("/home/au591455/Rstuff/Results") 
+  #setwd("C:/Users/simon/Desktop/TestR") 
 logpath = "/home/au591455/Rstuff/Results/log.txt"
 #logpath = "C:/Users/simon/Desktop/TestR/log.txt"
 path_of_log<-file(logpath)
@@ -116,6 +34,15 @@ if (newlog){
   studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000)
   {
     ##### preparations ----------------
+    if (is.null(foos1) |  is.null(foos2) ){
+      ptt <- list(statistic = NaN, 
+                  p.value = NaN, 
+                  alternative = "foos1 or foos2 are null", 
+                  method = "No method", 
+                  data.name = "Null")
+      class(ptt) <- "htest"
+      return(ptt)
+    }
     n <- dim(foos1)[1]
     m1 <- dim(foos1)[2]
     if (m1 < 2){
@@ -275,38 +202,38 @@ if (newlog){
   close(path_of_log)
 }
 
-
-
+Data =  readRDS(file = "DataPPP.Rdata")
+Matern4a = readRDS(file = "Matern_a.Rdata")
 tic()
-poweroftest(Outlier = Matern4a,Data=Data,name ="PowerMaternA.Rdata",n=nn,m=mm,squares = squares,newlog=T )
+poweroftest(Outlier = Matern4a,Data=Data,name ="PowerMaternA.Rdata",m=mm,squares = squares,newlog=T )
 T1 = toc()
 timeofpowertest[1] = T1$toc-T1$tic
-
+Maternba = readRDS(file = "Matern_b.Rdata")
 tic()
-poweroftest(Outlier = Matern4b,Data=Data,name ="PowerMaternB.Rdata",n=nn,m=mm,squares = squares)
+poweroftest(Outlier = Matern4b,Data=Data,name ="PowerMaternB.Rdata",m=mm,squares = squares)
 T1 = toc()
 timeofpowertest[2] = T1$toc-T1$tic
 
-
+Clust4a = readRDS(file = "Clust_a.Rdata")
 tic()
-poweroftest(Outlier = Clust4a ,Data=Data,name ="PowerClusterA.Rdata",n=nn,m=mm,squares = squares )
+poweroftest(Outlier = Clust4a ,Data=Data,name ="PowerClusterA.Rdata",m=mm,squares = squares )
 T1 = toc()
 timeofpowertest[3] = T1$toc-T1$tic
-
+Clust4b = readRDS(file = "Clust_b.Rdata")
 tic()
-poweroftest(Outlier = Clust4b ,Data=Data,name ="PowerClusterB.Rdata",n=nn,m=mm,squares = squares)
+poweroftest(Outlier = Clust4b ,Data=Data,name ="PowerClusterB.Rdata",m=mm,squares = squares)
 T1 = toc()
 timeofpowertest[4] = T1$toc-T1$tic
 
-
+Clust4c = readRDS(file = "Clust_c.Rdata")
 tic()
-poweroftest(Outlier = Clust4c ,Data=Data,name ="PowerClusterC.Rdata",n=nn,m=mm,squares = squares )
+poweroftest(Outlier = Clust4c ,Data=Data,name ="PowerClusterC.Rdata",m=mm,squares = squares )
 T1 = toc()
 timeofpowertest[5] = T1$toc-T1$tic
 
-
+poistest  = readRDS(file = "poisPPP.Rdata")
 tic()
-poweroftest(Outlier = poistest ,Data=Data,name ="Powerpois.Rdata",n=nn,m=mm,squares = squares )
+poweroftest(Outlier = poistest ,Data=Data,name ="Powerpois.Rdata",m=mm,squares = squares )
 T1 = toc()
 timeofpowertest[6] = T1$toc-T1$tic
 

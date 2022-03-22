@@ -133,6 +133,23 @@ plot(superimpose(XR,YR,ZR), main = "")
 
 nearest_point_metric(XR,YR) + nearest_point_metric(YR,ZR) - nearest_point_metric(XR,ZR)
 
+R_10 = c(1:1000)
+for (i in c(1:1000)){
+  X = rpoint(10)
+  Y = rpoint(10)
+  Z = rpoint(10)
+  Result =  nearest_point_metric(X,Y) + nearest_point_metric(Y,Z) - nearest_point_metric(X,Z)
+  R_10[i] = Result < 0
+}
+
+R_100 = c(1:1000)
+for (i in c(1:1000)){
+  X = rpoint(100)
+  Y = rpoint(100)
+  Z = rpoint(100)
+  Result =  nearest_point_metric(X,Y) + nearest_point_metric(Y,Z) - nearest_point_metric(X,Z)
+  R_100[i] = Result < 0
+}
 
 distMppp = function(X,nx=3,ny=ny,method=1,minpoints=20,sumfunc="Kest"){
   pvaluetrans = function(p,method){
