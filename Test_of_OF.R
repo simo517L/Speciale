@@ -13,10 +13,10 @@ library("tictoc",lib.loc=liblocation )
 library("foreach",lib.loc=liblocation )
 library("doParallel",lib.loc=liblocation )
 
-studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000)
-{
+studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000){
   ##### preparations ----------------
   if (is.null(foos1) |  is.null(foos2) ){
+    print("foos1 or foos2 are null")
     ptt <- list(statistic = NaN, 
                 p.value = NaN, 
                 alternative = "foos1 or foos2 are null", 
@@ -28,6 +28,7 @@ studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000)
   n <- dim(foos1)[1]
   m1 <- dim(foos1)[2]
   if (m1 < 2){
+    print("foos1 is not a matrix")
     datname <- paste( deparse(substitute(foos1)),"and", deparse(substitute(foos2)))
     ptt <- list(statistic = NaN, 
                 p.value = NaN, 
@@ -40,6 +41,7 @@ studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000)
     
   } # need at least two per group
   if(dim(foos2)[1] != n){
+    print("foos2 does not have the same lenght as foos1")
     datname <- paste( deparse(substitute(foos1)),"and", deparse(substitute(foos2)))
     ptt <- list(statistic = NaN, 
                 p.value = NaN, 
@@ -51,6 +53,7 @@ studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000)
   } # dimensions
   m2 <- dim(foos2)[2]
   if (m2 < 2){
+    print("foos2 is not a matrix")
     datname <- paste( deparse(substitute(foos1)),"and", deparse(substitute(foos2)))
     ptt <- list(statistic = NaN, 
                 p.value = NaN, 
@@ -125,7 +128,7 @@ studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000)
 
 
 
-OutlierPPP_Permu = function(Outlier,PPP,nx,ny=nx,minpoints=20,use.tbar=FALSE,rinterval=NULL,nperm=999,sumfunc=Kest,...){
+OutlierPPP_Permu = function(Outlier,PPP,nx,ny=nx,minpoints=20,use.tbar=1,nperm=1,rinterval=NULL,sumfunc=Kest,...){
   
   grid1 = quadrats(Outlier,nx=nx,ny=ny)
   splitOutlier = split(Outlier,f=grid1)
@@ -145,7 +148,8 @@ OutlierPPP_Permu = function(Outlier,PPP,nx,ny=nx,minpoints=20,use.tbar=FALSE,rin
   }
   n = length(PPP)
   PPPStat = NULL
-  splitPP = list()
+  if (!is.ppp(PPP)){
+      splitPP = list()
   for (i in c(1:n)){
     grid2 = quadrats(PPP[[i]],nx=nx,ny=ny)
     splitPP = append(splitPP,split(PPP[[i]],f=grid2))
@@ -159,6 +163,24 @@ OutlierPPP_Permu = function(Outlier,PPP,nx,ny=nx,minpoints=20,use.tbar=FALSE,rin
       }
     }
   }
+  } else{
+    grid1 = quadrats(PPP,nx=nx,ny=ny)
+    splitPPP = split(PPP,f=grid1)
+    for(i in c(1:(nx*ny))){
+      if(splitPPP[[i]]$n >= minpoints){
+        if (is.null(PPPStat)){
+          TEMPF =  sumfunc(splitPPP[[i]],r=rinterval)
+          PPPStat= matrix(TEMPF$iso , byrow = F, ncol = 1,nrow = length(TEMPF$iso))
+        } else{
+          PPPStat = cbind(PPPStat,sumfunc(splitPPP[[i]],r=rinterval)$iso )
+        }
+      }
+    }
+    
+    
+  }
+
+
   
   return(studpermut.test.Ute(foos1 = OutlierStat,foos2= PPPStat,use.tbar=use.tbar,nperm=nperm))
 }
@@ -183,7 +205,7 @@ nearest_point_metric = function(X,Y){
 
 
 
-distMppp = function(X,nx=3,ny=nx,method=1,minpoints=20,sumfunc="Kest"){
+distMppp = function(X,nx=3,ny=nx,method=1,minpoints=20,sumfunc=Kest){
 
   n = length(X)
   M = matrix(0,n,n)
@@ -191,7 +213,7 @@ distMppp = function(X,nx=3,ny=nx,method=1,minpoints=20,sumfunc="Kest"){
   for (i in c(1:n)){
     for (j in c(q:n)){
       if (method==1 ){
-        tempstore=UteMethod(X[[i]],X[[j]],nperm = 1,nx=nx, ny=ny,minpoints=minpoints,sumfunc=sumfunc)
+        tempstore = OutlierPPP_Permu(X[[i]],X[[j]],nx=nx,ny=ny,minpoints=minpoints,use.tbar=1,sumfunc=sumfunc)
         M[i,j]=tempstore$statistic
       } else if (method==2){
         M[i,j]=nearest_point_metric(X[[i]],X[[j]])
@@ -239,9 +261,6 @@ l_outlier_factor = function(M,k,p){
 }
 
 outlier_factors_PP = function(X,k,nx,ny=ny,method=1,minpoints=20){
-  M = distMppp(X,nx=nx,ny=ny,method=method,minpoints=minpoints)
-  n = length(X)
-  m = length(k)
   Result = matrix(0,nrow = n,ncol = m)
   colnames(Result) <- k
   for (i in  c(1:m)){
@@ -254,11 +273,19 @@ outlier_factors_PP = function(X,k,nx,ny=ny,method=1,minpoints=20){
 
 Test_outlier_OF = function(Outlier,PPP,nx,ny=nx,method=1,minpoints=20,Kinterval){
   X = c(PPP,list(Outlier))
+  if (length(X) < max(Kinterval)){
+    Kinterval = Kinterval[Kinterval< length(X)]
+    print("Kinterval values cannot be bigger then the amount of point patterns")
+  }
   n = length(PPP)
   Result = outlier_factors_PP(X=X,k=Kinterval,nx=nx,ny=ny,method=method,minpoints=minpoints)
+  
   colum = which.max(Result[n+1,])
   return(mean(Result[n+1,colum] <= Result[,colum]))
 }
+
+outlier_factors_PP(c(Matern4a[1],Data[1:20]),method = 1,nx=2,ny=2,minpoints = 4,k = c(5:15))
+OutlierPPP_Permu(Matern4a[[1]],PPP=Data[2], nx = 3, ny = 3, minpoints = 10)
 
 registerDoParallel(2)
 nn =10
