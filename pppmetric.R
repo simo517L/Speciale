@@ -151,6 +151,27 @@ for (i in c(1:1000)){
   R_100[i] = Result < 0
 }
 
+R_1 = c(1:1000)
+for (i in c(1:1000)){
+  X = rpoint(1)
+  Y = rpoint(1)
+  Z = rpoint(1)
+  Result =  nearest_point_metric(X,Y) + nearest_point_metric(Y,Z) - nearest_point_metric(X,Z)
+  R_1[i] = Result < 0
+}
+
+
+R_2= c(1:1000)
+for (i in c(1:1000)){
+  X = rpoint(2)
+  Y = rpoint(2)
+  Z = rpoint(2)
+  Result =  nearest_point_metric(X,Y) + nearest_point_metric(Y,Z) - nearest_point_metric(X,Z)
+  R_2[i] = Result < 0
+}
+
+
+
 distMppp = function(X,nx=3,ny=ny,method=1,minpoints=20,sumfunc="Kest"){
   pvaluetrans = function(p,method){
     if (method==1){
@@ -170,9 +191,7 @@ distMppp = function(X,nx=3,ny=ny,method=1,minpoints=20,sumfunc="Kest"){
         M[i,j]=tempstore$statistic
       } else if (method==2){
         M[i,j]=nearest_point_metric(X[[i]],X[[j]])
-      } else if (method ==3){
-        M[i,j]=spike_timedist(X[[i]],X[[j]])
-      }
+      } 
 
       M[j,i]=M[i,j]
     }

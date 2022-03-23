@@ -203,12 +203,13 @@ if (newlog){
 }
 
 Data =  readRDS(file = "DataPPP.Rdata")
-Matern4a = readRDS(file = "Matern_a.Rdata")
-tic()
-poweroftest(Outlier = Matern4a,Data=Data,name ="PowerMaternA.Rdata",m=mm,squares = squares,newlog=T )
-T1 = toc()
-timeofpowertest[1] = T1$toc-T1$tic
-Maternba = readRDS(file = "Matern_b.Rdata")
+#Matern4a = readRDS(file = "Matern_a.Rdata")
+#tic()
+#poweroftest(Outlier = Matern4a,Data=Data,name ="PowerMaternA.Rdata",m=mm,squares = squares,newlog=T )
+#T1 = toc()
+#timeofpowertest[1] = T1$toc-T1$tic
+
+Matern4b = readRDS(file = "Matern_b.Rdata")
 tic()
 poweroftest(Outlier = Matern4b,Data=Data,name ="PowerMaternB.Rdata",m=mm,squares = squares)
 T1 = toc()
@@ -219,6 +220,7 @@ tic()
 poweroftest(Outlier = Clust4a ,Data=Data,name ="PowerClusterA.Rdata",m=mm,squares = squares )
 T1 = toc()
 timeofpowertest[3] = T1$toc-T1$tic
+
 Clust4b = readRDS(file = "Clust_b.Rdata")
 tic()
 poweroftest(Outlier = Clust4b ,Data=Data,name ="PowerClusterB.Rdata",m=mm,squares = squares)
