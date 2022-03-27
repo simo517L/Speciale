@@ -1,5 +1,5 @@
-liblocation = "/home/au591455/Rstuff/library"
-#liblocation = NULL
+#liblocation = "/home/au591455/Rstuff/library"
+liblocation = NULL
 library("spatstat.data",lib.loc=liblocation )
 library("spatstat.geom",lib.loc=liblocation )
 library("spatstat.random",lib.loc=liblocation )
@@ -22,8 +22,6 @@ setwd("/home/au591455/Rstuff/Results")
 #setwd("C:/Users/simon/Desktop/TestR") 
 poweroftest = function(Outlier,Data,name,m,squares,newlog = F){
   n = length(Outlier)
-  setwd("/home/au591455/Rstuff/Results") 
-  #setwd("C:/Users/simon/Desktop/TestR") 
 logpath = "/home/au591455/Rstuff/Results/log.txt"
 #logpath = "C:/Users/simon/Desktop/TestR/log.txt"
 path_of_log<-file(logpath)
@@ -181,6 +179,8 @@ if (newlog){
     return(studpermut.test.Ute(foos1 = OutlierStat,foos2= PPPStat,use.tbar=use.tbar,nperm=nperm))
   }
   
+
+  
   ResultpowerM1temp1 <- foreach (i= c(1:m), .combine="cbind", .packages = c("spatstat")) %:%
     foreach (j= c(1:length(squares)), .combine="c", .packages = c("spatstat")) %dopar% {
       QQQ = OutlierPPP_Permu(Outlier = Outlier[[i]], PPP = Data[c((i*20-19):(i*20))], nx=squares[[j]][1],ny=squares[[j]][2],minpoints = 4)
@@ -188,6 +188,10 @@ if (newlog){
   
   ResultpowerM1 = ResultpowerM1temp1
   for (q in c(2:(n/m))){
+    setwd("/home/au591455/Rstuff/Results") 
+    #setwd("C:/Users/simon/Desktop/TestR") 
+    tempC = readLines(path_of_log)
+    writeLines(c(tempC,paste(name,"beginning the ",q," part ", Sys.time())),path_of_log)
     ResultpowerM1temp1 <- foreach (i= c((q*m-(m-1)):(q*m)), .combine="cbind", .packages = c("spatstat")) %:%
       foreach (j= c(1:length(squares)), .combine="c", .packages = c("spatstat")) %dopar% {
         QQQ = OutlierPPP_Permu(Outlier = Outlier[[i]], PPP = Data[c((i*20-19):(i*20))], nx=squares[[j]][1],ny=squares[[j]][2],minpoints =4)
@@ -202,6 +206,7 @@ if (newlog){
   close(path_of_log)
 }
 
+
 Data =  readRDS(file = "DataPPP.Rdata")
 #Matern4a = readRDS(file = "Matern_a.Rdata")
 #tic()
@@ -209,37 +214,32 @@ Data =  readRDS(file = "DataPPP.Rdata")
 #T1 = toc()
 #timeofpowertest[1] = T1$toc-T1$tic
 
-Matern4b = readRDS(file = "Matern_b.Rdata")
-tic()
-poweroftest(Outlier = Matern4b,Data=Data,name ="PowerMaternB.Rdata",m=mm,squares = squares)
-T1 = toc()
-timeofpowertest[2] = T1$toc-T1$tic
+#Matern4b = readRDS(file = "Matern_b.Rdata")
+#tic()
+#poweroftest(Outlier = Matern4b,Data=Data,name ="PowerMaternB.Rdata",m=mm,squares = squares)
+#T1 = toc()
+#timeofpowertest[2] = T1$toc-T1$tic
 
-Clust4a = readRDS(file = "Clust_a.Rdata")
-tic()
-poweroftest(Outlier = Clust4a ,Data=Data,name ="PowerClusterA.Rdata",m=mm,squares = squares )
-T1 = toc()
-timeofpowertest[3] = T1$toc-T1$tic
+#Clust4a = readRDS(file = "Clust_a.Rdata")
 
-Clust4b = readRDS(file = "Clust_b.Rdata")
-tic()
-poweroftest(Outlier = Clust4b ,Data=Data,name ="PowerClusterB.Rdata",m=mm,squares = squares)
-T1 = toc()
-timeofpowertest[4] = T1$toc-T1$tic
+#poweroftest(Outlier = Clust4a ,Data=Data,name ="PowerClusterA.Rdata",m=mm,squares = squares )
 
-Clust4c = readRDS(file = "Clust_c.Rdata")
-tic()
-poweroftest(Outlier = Clust4c ,Data=Data,name ="PowerClusterC.Rdata",m=mm,squares = squares )
-T1 = toc()
-timeofpowertest[5] = T1$toc-T1$tic
+#Clust4b = readRDS(file = "Clust_b.Rdata")
+
+#poweroftest(Outlier = Clust4b ,Data=Data,name ="PowerClusterB.Rdata",m=mm,squares = squares)
+
+
+#Clust4c = readRDS(file = "Clust_c.Rdata")
+
+#poweroftest(Outlier = Clust4c ,Data=Data,name ="PowerClusterC.Rdata",m=mm,squares = squares )
+
+
 
 poistest  = readRDS(file = "poisPPP.Rdata")
-tic()
-poweroftest(Outlier = poistest ,Data=Data,name ="Powerpois.Rdata",m=mm,squares = squares )
-T1 = toc()
-timeofpowertest[6] = T1$toc-T1$tic
 
-save(timeofpowertest,file = "timeofpowertest.Rdata")
+poweroftest(Outlier = poistest ,Data=Data,name ="Powerpois.Rdata",m=mm,squares = squares )
+
+
 
 stopImplicitCluster()
 
