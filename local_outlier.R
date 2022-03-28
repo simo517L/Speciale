@@ -42,6 +42,21 @@ outlier_factors_PP = function(X,k,nx,ny=ny,method=1,minpoints=20){
   }}
   return(Result)
 }
+
+#TESTX = clickppp()
+MM = crossdist(TESTX ,TESTX )
+n = TESTX$n
+k= c(5:15)
+m = length(k)
+ResultT = matrix(0,nrow = n,ncol = m)
+colnames(ResultT) <- k
+for (i in  c(1:m)){
+  for (j in c(1:n)){
+    ResultT[j,i] = l_outlier_factor(MM,k[i],j)
+  }}
+rowMeans(ResultT)
+
+
 pois_of  = rpoispp(100,nsim=20)
 Matern_a_of = rMaternI(100,r=0.05,nsim=1)
 Matern_b_of  = rMaternI(100,r=0.02,nsim=1)
