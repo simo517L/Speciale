@@ -125,6 +125,9 @@ for (i in c(1:1000)){
   }
 }
 
+XR = ppp(x=c(0.2,0.2,0.2,0.1,0.1,0.1),y=c(0.8,0.9,0.7,0.8,0.9,0.7))
+YR = ppp(x=c(0.4),y=c(0.8))
+ZR = ppp(x=c(0.3),y=c(0.2))
 marks(XR) <- factor("x")
 marks(YR) <- factor("y")
 marks(ZR) <- factor("z")
@@ -132,6 +135,10 @@ marks(ZR) <- factor("z")
 plot(superimpose(XR,YR,ZR), main = "")
 
 nearest_point_metric(XR,YR) + nearest_point_metric(YR,ZR) - nearest_point_metric(XR,ZR)
+
+
+
+
 
 R_10 = c(1:1000)
 for (i in c(1:1000)){

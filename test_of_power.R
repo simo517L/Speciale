@@ -200,7 +200,7 @@ lines(number_of_squares,rowMeans(ResultpowerM4),lty=4,col=4)
 lines(number_of_squares,rowMeans(ResultpowerM5),lty=5,col=5)
 legend(x=10,y=0.8 , legend = c("Matern2","Clustera","Clusterb","Clusterc"), lty=2:5,col = 2:5,cex = 0.55)
 
-rowSums(ResultpowerM2)
+
 
 conf_of_power=function(M,n){
   Result = rowSums(M)
@@ -244,6 +244,18 @@ plot_of_power = function(Data,Size,X,conf = FALSE,legendC = FALSE,legendNames=NU
         lines(X,Results[[j]]$lower_lim,lty=2,col=j)
     }
       
+  }} else if ( is.matrix(Data) & length(Data) > 1) {
+    n = dim(Data)[2]
+    Results = conf_of_power(Data,Size)
+
+    if (conf == FALSE){
+      plot(X,Results$p_value,type="l",lty=1,col=1,ylim = c(0,1),ylab = "Rate of rejection")
+
+    }     else{
+      plot(X,Results$p_value,type="l",lty=1,col=1,ylim = c(0,1),ylab = "Rate of rejection")
+      lines(X,Results$upper_lim,lty=2,col=1)
+      lines(X,Results$lower_lim,lty=2,col=1)
+    
   }} else {
     n=1
     Results = conf_of_power(Data,Size)
@@ -306,5 +318,47 @@ test_of_power = function(X, Outlier,Data,testrange=0.3,method){
   return(power_result)
 }
 
+result_Mata_sumfunc_sq = readRDS(file = "PowerMaternA.Rdata")
+
+number_of_squares = c(3,4,6,8,9,12) 
+par(mfrow = c(3,2))
+power_Mata_sunfunc_sq = result_Mata_sumfunc_sq[,is.nan(colMeans(result_Mata_sumfunc_sq)) != T] <=  0.05
+sum(is.nan(colMeans(result_Mata_sumfunc_sq)) == T)
+plot_of_power(Data=power_Mata_sunfunc_sq,Size = dim(power_Mata_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = T)
+
+result_Matb_sumfunc_sq = readRDS(file = "PowerMaternB.Rdata")
+power_Matb_sunfunc_sq = result_Matb_sumfunc_sq[,is.nan(colMeans(result_Matb_sumfunc_sq)) != T] <=  0.05
+sum(is.nan(colMeans(result_Matb_sumfunc_sq)) == T)
+plot_of_power(Data=power_Matb_sunfunc_sq,Size = dim(power_Matb_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = T)
+
+result_clustA_sumfunc_sq = readRDS(file = "PowerClusterA.Rdata")
+power_clustA_sunfunc_sq = result_clustA_sumfunc_sq[,is.nan(colMeans(result_clustA_sumfunc_sq)) != T] <=  0.05
+sum(is.nan(colMeans(result_clustA_sumfunc_sq)) == T)
+plot_of_power(Data=power_clustA_sunfunc_sq,Size = dim(power_clustA_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = T)
+
+result_clustB_sumfunc_sq = readRDS(file = "PowerClusterB.Rdata")
+power_clustB_sunfunc_sq = result_clustB_sumfunc_sq[,is.nan(colMeans(result_clustB_sumfunc_sq)) != T] <=  0.05
+sum(is.nan(colMeans(result_clustB_sumfunc_sq)) == T)
+plot_of_power(Data=power_clustB_sunfunc_sq,Size = dim(power_clustB_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = T)
 
 
+result_clustC_sumfunc_sq = readRDS(file = "PowerClusterC.Rdata")
+power_clustC_sunfunc_sq = result_clustC_sumfunc_sq[,is.nan(colMeans(result_clustC_sumfunc_sq)) != T] <=  0.05
+
+plot_of_power(Data=power_clustC_sunfunc_sq,Size = dim(power_clustC_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = T)
+
+
+result_pois_sumfunc_sq = readRDS(file = "Powerpois.Rdata")
+power_pois_sunfunc_sq = result_pois_sumfunc_sq[,is.nan(colMeans(result_pois_sumfunc_sq)) != T] <=  0.05
+plot_of_power(Data=power_pois_sunfunc_sq,Size = dim(power_pois_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = T)
+
+par(mfrow = c(1,1))
+
+sum(is.nan(result_Mata_sumfunc_sq) == T)
+sum(is.nan(result_Matb_sumfunc_sq) == T)
+
+sum(is.nan(result_clustA_sumfunc_sq) == T)
+sum(is.nan(result_clustB_sumfunc_sq) == T)
+sum(is.nan(result_clustC_sumfunc_sq) == T)
+
+sum(is.nan(result_pois_sumfunc_sq) == T)

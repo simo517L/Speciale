@@ -563,7 +563,7 @@ if(DataSize < Kinterval[length(Kinterval)] ){
       Result = outlier_factors_PP(X=X,k=Kinterval,nx=nx,ny=ny,method=method,minpoints=minpoints)
       
       colum = which.max(Result[n+1,])
-      return(mean(Result[n+1,colum] < Result[,colum]))
+      return(mean(Result[n+1,colum] <= Result[,colum]))
     }
     
     

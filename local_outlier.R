@@ -55,8 +55,9 @@ for (i in  c(1:m)){
     ResultT[j,i] = l_outlier_factor(MM,k[i],j)
   }}
 rowMeans(ResultT)
-
-
+Xnye <- TESTX
+marks(Xnye) <- rowMeans(ResultT) 
+plot(Xnye)
 pois_of  = rpoispp(100,nsim=20)
 Matern_a_of = rMaternI(100,r=0.05,nsim=1)
 Matern_b_of  = rMaternI(100,r=0.02,nsim=1)
