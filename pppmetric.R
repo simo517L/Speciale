@@ -91,6 +91,15 @@ spike_timedist = function(X,Y,pd=1,pa=pd,pm=1){
   return(tempF(distM)[[1]])
 }
 
+spike_timedist2 = function(X,Y,pd=1,pa=pd,pm=1,alg = c("default", "IMA", "VP97", "MSU"), euclid = NULL,
+lossOrder = 1, maxBranch = 4, eps = 10^-10, bypassCheck = FALSE){
+  p1 = cbind(X$x,X$y)
+  p2 = cbind(Y$x,Y$y)
+  hold = stDist(p1, p2,pd=pd,pa=pa,pm=pm,alg = alg, euclid = euclid,
+                lossOrder = lossOrder, maxBranch = maxBranch, eps = eps, 
+                bypassCheck = bypassCheck)
+  return(hold)
+} 
 nearest_pointdist = function(X,Y){
   LX = coords(X)
   LY = coords(Y)
@@ -138,8 +147,24 @@ nearest_point_metric(XR,YR) + nearest_point_metric(YR,ZR) - nearest_point_metric
 
 
 
-
-
+for (i in c(1:1000)){
+  print(i)
+  X = rpoint(100)
+  Y = rpoint(100)
+  Z = rpoint(100)
+  MM = distMppp(list(X,Y,Z),nx=2,ny=2,method=1,minpoints=20,sumfunc=Kest)
+  Result =  MM[1,2] + M[2,3] - M[1,3]
+  if(Result < 0){
+    XRL = X
+    YRL = Y
+    ZRL = Z
+  }
+}
+MM = distMppp(list(XRL,YRL,ZRL),nx=2,ny=2,method=1,minpoints=20,sumfunc=Kest)
+MM[1,2] + M[2,3] - M[1,3]
+Counter_Example2 = hyperframe(list(XRL,YRL,ZRL),row.names=c("X","Y","Z"))
+plot(Counter_Example2,main = "")
+names(Counter_Example2[1])
 R_10 = c(1:1000)
 for (i in c(1:1000)){
   X = rpoint(10)
@@ -179,27 +204,23 @@ for (i in c(1:1000)){
 
 
 
-distMppp = function(X,nx=3,ny=ny,method=1,minpoints=20,sumfunc="Kest"){
-  pvaluetrans = function(p,method){
-    if (method==1){
-      return(1/p -1)
-    }
-    else if (method==2){
-      return(1-p)
-    }
-  }
+distMppp = function(X,nx=3,ny=nx,method=1,minpoints=20,sumfunc=Kest){
+  
   n = length(X)
   M = matrix(0,n,n)
   q=1
   for (i in c(1:n)){
     for (j in c(q:n)){
       if (method==1 ){
-        tempstore=UteMethod(X[[i]],X[[j]],nperm = 1,nx=3,minpoints=minpoints,sumfunc=sumfunc)
+        tempstore = OutlierPPP_Permu(X[[i]],X[[j]],nx=nx,ny=ny,minpoints=minpoints,use.tbar=1,sumfunc=sumfunc)
         M[i,j]=tempstore$statistic
       } else if (method==2){
         M[i,j]=nearest_point_metric(X[[i]],X[[j]])
-      } 
-
+      } else if (method ==3){
+        tempstore = spike_timedist2(X[[i]],X[[j]], bypassCheck =T)
+        M[i,j] = tempstore$distance
+      }
+      
       M[j,i]=M[i,j]
     }
     q = q+1
@@ -228,5 +249,10 @@ plot(hctestPP5)
 
 #DONT RUN
 MDtest4 = distMppp(L,nx=3,method = 3)
-hctestPP4= agnes(MDtest3)
+hctestPP4= agnes(MDtest4)
 plot(hctestPP4)
+
+MDtest5 = distMppp(L1,nx=3,method = 3)
+hctestPP5= agnes(MDtest5)
+plot(hctestPP5)
+

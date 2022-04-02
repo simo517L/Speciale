@@ -18,19 +18,9 @@ squares = list(c(3,1),c(2,2),c(3,2),c(4,2),c(3,3),c(3,4))
 mm=20
 timeofpowertest  =c(1:6)
 squares = list(c(3,1),c(2,2),c(3,2),c(4,2),c(3,3),c(3,4))
-setwd("/home/au591455/Rstuff/Results") 
-#setwd("C:/Users/simon/Desktop/TestR") 
-poweroftest = function(Outlier,Data,name,m,squares,newlog = F){
-  n = length(Outlier)
-logpath = "/home/au591455/Rstuff/Results/log.txt"
-#logpath = "C:/Users/simon/Desktop/TestR/log.txt"
-path_of_log<-file(logpath)
-if (newlog){
-  writeLines("Start UP", path_of_log)
-}
-
-  studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000)
-  {
+#setwd("/home/au591455/Rstuff/Results") 
+setwd("C:/Users/simon/Desktop/TestR") 
+studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000){
     ##### preparations ----------------
     if (is.null(foos1) |  is.null(foos2) ){
       ptt <- list(statistic = NaN, 
@@ -138,10 +128,98 @@ if (newlog){
     class(ptt) <- "htest"
     return(ptt)
   }
+
+poweroftest = function(Outlier,Data,name,m,squares,newlog = F,minpoints=20){
+  n = length(Outlier)
+#logpath = "/home/au591455/Rstuff/Results/log.txt"
+logpath = "C:/Users/simon/Desktop/TestR/log.txt"
+path_of_log<-file(logpath)
+if (newlog){
+  writeLines("Start UP", path_of_log)
+}
+
+  
+studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000)
+{
+  ##### preparations ----------------
+  n <- dim(foos1)[1]
+  m1 <- dim(foos1)[2]
+  stopifnot (m1 > 1) # need at least two per group
+  stopifnot(dim(foos2)[1] == n) # dimensions
+  m2 <- dim(foos2)[2]
+  stopifnot (m2 > 1) # need at least two per group
+  m <- m1+m2
+  foos <- cbind(foos1, foos2)
+  # get the permutations. 
+  # If m1 == m2, break the symmetry and save half time and memory!
+  # 
+  # allcomb <- is.null(nperm)
+  # ncomb <- if (m1 == m2) choose(m-1, m1-1) else choose(m, m1)
+  # if nperm is larger than the actual number of combinations, also use all of them
+  # if (!allcomb)
+  # {
+  # ncomb <- if (m1 == m2) choose(m-1, m1-1) else choose(m, m1)
+  #  if (ncomb < (nperm + 1)) allcomb <- TRUE
+  # }
+  # if (allcomb)
+  #   {
+  #   if (m1 == m2) index1 <- rbind(1, combn(m - 1, m1 - 1) + 1)
+  #   else index1 <- combn(m, m1)
+  # } else {
+  #   if (m1 == m2) index1 <- rbind(1, replicate(nperm, sample(m - 1, m1 - 1) + 1)) 
+  #   else index1 <- replicate(nperm, sample(m, m1)) 
+  #   index1 <- cbind((1 : m1), index1) # the first is the original
+  # }
+  # 
+  index1 <- cbind(1:m1, replicate(nperm, sample(m, m1)))
+  
+  # do the calculations the good old fashioned way with sums and sqs, to save time
+  
+  foos_sq <- foos^2
+  SX. <- apply (foos, 1, sum)
+  SXX. <- apply (foos_sq, 1, sum)
+  
+  Tstatistic <- function (ind) # 
+  {
+    SX1 <- apply(foos[, ind], 1, sum)
+    SXX1 <- apply(foos_sq[, ind], 1, sum)
+    SX2 <- SX. - SX1
+    SXX2 <- SXX. - SXX1
+    mu1 <- SX1 / m1 
+    mu2 <- SX2 / m2
+    ss1 <- (SXX1 - (SX1^2 / m1)) / ((m1-1) * m1)
+    ss2 <- (SXX2 - (SX2^2 / m2)) / ((m2-1) * m2)
+    
+    ss <- ss1 + ss2
+    meandiff_sq <- (mu1 - mu2)^2
+    
+    result <- if (use.tbar) (sum(meandiff_sq) / sum(ss)) 
+    else (mean(meandiff_sq / ss, na.rm=T))
+    result
+  }
+  
+  Tvals <- apply(index1, 2, Tstatistic)
+  
+  pval <- mean(Tvals >= Tvals[1], na.rm = TRUE)           
+  stat <- Tvals[1]
+  names(stat) <- if(use.tbar) "Tbar" else "T"
+  datname <- paste( deparse(substitute(foos1)),"and", deparse(substitute(foos2)))
+  method <- c(paste("Studentized two sample permutation test for fda, using T",
+                    ifelse(use.tbar, "bar", ""), sep=""),
+              paste("using",nperm,"randomly selected permuations"))
+  alternative <- "samples not exchangeable"
+  ptt <- list(statistic = stat, 
+              p.value = pval, 
+              alternative = alternative, 
+              method = method, 
+              data.name = datname)
+  class(ptt) <- "htest"
+  return(ptt)
+}
+
   
   
-  
-  OutlierPPP_Permu = function(Outlier,PPP,nx,ny=nx,minpoints=20,use.tbar=FALSE,rinterval=NULL,nperm=999,sumfunc=Kest,...){
+  OutlierPPP_Permu = function(Outlier,PPP,nx,ny=nx,minpoints=20,use.tbar=FALSE,rinterval,nperm=999,sumfunc=Kest,...){
     
     grid1 = quadrats(Outlier,nx=nx,ny=ny)
     splitOutlier = split(Outlier,f=grid1)
@@ -150,9 +228,6 @@ if (newlog){
       if(splitOutlier[[i]]$n >= minpoints){
         if (is.null(OutlierStat)){
           TEMPF =  sumfunc(splitOutlier[[i]],r=rinterval)
-          if (is.null(rinterval)){
-            rinterval = TEMPF$r
-          }
           OutlierStat = matrix(TEMPF$iso , byrow = F, ncol = 1,nrow = length(TEMPF$iso))
         } else{
           OutlierStat = cbind(OutlierStat,sumfunc(splitOutlier[[i]],r=rinterval)$iso )
@@ -180,21 +255,22 @@ if (newlog){
   }
   
 
-  
+  rinterval = seq(0,0.125,length.out = 30)
   ResultpowerM1temp1 <- foreach (i= c(1:m), .combine="cbind", .packages = c("spatstat")) %:%
     foreach (j= c(1:length(squares)), .combine="c", .packages = c("spatstat")) %dopar% {
-      QQQ = OutlierPPP_Permu(Outlier = Outlier[[i]], PPP = Data[c((i*20-19):(i*20))], nx=squares[[j]][1],ny=squares[[j]][2],minpoints = 4)
+      QQQ = OutlierPPP_Permu(Outlier = Outlier[[i]], PPP = Data[c((i*20-19):(i*20))],rinterval = rinterval , nx=squares[[j]][1],ny=squares[[j]][2],minpoints = minpoints)
       QQQ$p.value}
   
   ResultpowerM1 = ResultpowerM1temp1
   for (q in c(2:(n/m))){
-    setwd("/home/au591455/Rstuff/Results") 
-    #setwd("C:/Users/simon/Desktop/TestR") 
+    print(q)
+    #setwd("/home/au591455/Rstuff/Results") 
+    setwd("C:/Users/simon/Desktop/TestR") 
     tempC = readLines(path_of_log)
     writeLines(c(tempC,paste(name,"beginning the ",q," part ", Sys.time())),path_of_log)
     ResultpowerM1temp1 <- foreach (i= c((q*m-(m-1)):(q*m)), .combine="cbind", .packages = c("spatstat")) %:%
       foreach (j= c(1:length(squares)), .combine="c", .packages = c("spatstat")) %dopar% {
-        QQQ = OutlierPPP_Permu(Outlier = Outlier[[i]], PPP = Data[c((i*20-19):(i*20))], nx=squares[[j]][1],ny=squares[[j]][2],minpoints =4)
+        QQQ = OutlierPPP_Permu(Outlier = Outlier[[i]], PPP = Data[c((i*20-19):(i*20))],rinterval = rinterval, nx=squares[[j]][1],ny=squares[[j]][2],minpoints =minpoints)
         QQQ$p.value
       }
     ResultpowerM1  = cbind(ResultpowerM1,ResultpowerM1temp1)
@@ -237,10 +313,45 @@ poweroftest(Outlier = Clust4c ,Data=Data,name ="PowerClusterC.Rdata",m=mm,square
 
 poistest  = readRDS(file = "poisPPP.Rdata")
 
-poweroftest(Outlier = poistest ,Data=Data,name ="Powerpois.Rdata",m=mm,squares = squares )
+poweroftest(Outlier = poistest[1:50] ,Data=Data[1:1000],name ="PowerpoisTest.Rdata",m=mm,squares = squares,minpoints = 4 )
+
+poistestP  = readRDS(file = "PowerpoisTest.Rdata")
+
+poistestP2  = readRDS(file = "PowerpoisTest2.Rdata")
+
+poistestP3  = readRDS(file = "PowerpoisTest3.Rdata")
+
+
+rpoispp(100,nsim=nn)
+tempwin =   owin(xrange=c(0,2), yrange=c(0,2))
+poweroftest(Outlier = rpoispp(100,win=tempwin,nsim=50),Data=rpoispp(100,win=tempwin,nsim=50*20),name ="PowerpoisTest4.Rdata",m=mm,squares = squares,minpoints = 20 )
+poistestP4  = readRDS(file = "PowerpoisTest4.Rdata")
+rowMeans(poistestP4< 0.05)
+
+tempwin =   owin(xrange=c(0,3), yrange=c(0,3))
+poweroftest(Outlier = rpoispp(100,win=tempwin,nsim=100),Data=rpoispp(100,win=tempwin,nsim=100*20),name ="PowerpoisTest5.Rdata",m=mm,squares = squares,minpoints = 20 )
+poistestP5  = readRDS(file = "PowerpoisTest5.Rdata")
+rowMeans(poistestP5< 0.05)
 
 
 
+poweroftest(Outlier = rpoispp(100,nsim=100),Data=rpoispp(100,nsim=100*20),name ="PowerpoisTest5.Rdata",m=mm,squares = squares,minpoints = 20 )
+poistestP5  = readRDS(file = "PowerpoisTest5.Rdata")
+rowMeans(poistestP5< 0.05)
+mean(poistestP5[3,][-which(is.na(poistestP5[3,]))]<0.05)
+mean(poistestP5[4,][-which(is.na(poistestP5[4,]))]<0.05)
+mean(poistestP5[5,][-which(is.na(poistestP5[5,]))]<0.05)
+
+poweroftest(Outlier = rpoispp(200,nsim=100),Data=rpoispp(200,nsim=100*20),name ="PowerpoisTest6.Rdata",m=mm,squares = squares,minpoints = 20 )
+poistestP6  = readRDS(file = "PowerpoisTest6.Rdata")
+rowMeans(poistestP6< 0.05)
+
+OT = rpoispp(250,nsim=100)
+DA= rpoispp(250,nsim=100*20)
+
+poweroftest(Outlier = OT,Data=DA,name ="PowerpoisTest7.Rdata",m=mm,squares = squares,minpoints = 20 )
+poistestP7  = readRDS(file = "PowerpoisTest7.Rdata")
+rowMeans(poistestP7< 0.05)
 stopImplicitCluster()
 
 

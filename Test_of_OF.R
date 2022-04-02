@@ -1,5 +1,5 @@
 liblocation = "/home/au591455/Rstuff/library"
-#liblocation = NULL
+liblocation = "/Users/simon/Desktop/TestR"
 library("spatstat.data",lib.loc=liblocation )
 library("spatstat.geom",lib.loc=liblocation )
 library("spatstat.random",lib.loc=liblocation )
@@ -12,8 +12,35 @@ library("iterators",lib.loc=liblocation )
 library("tictoc",lib.loc=liblocation )
 library("foreach",lib.loc=liblocation )
 library("doParallel",lib.loc=liblocation )
+library(utils)
+install_github("cran/ppMeasures")
+install.packages(c("ppMeasures", "smacof"))
+library(ppMeasures)
+library(smacof)
 
-studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000){
+library("ppMeasures",lib.loc=liblocation )
+
+X = cbind(c(1,1,1,1,1),c(1:5))
+Y = cbind(rgamma(5, 2), rgamma(5, 1.8))
+stDistPP = function(X,Y,...){
+  p1 = cbind(X$x,X$y)
+  p2 = cbind(Y$x,Y$y)
+  return(stDist(X, Y, ...))
+}
+XX =rpoispp(10)
+YY =rpoispp(10)
+hold2  = stDistPP(XX,YY,pm=1)
+hold <- stDist(cbind(XX$x,XX$y), cbind(YY$x,YY$y), 1,bypassCheck=T)
+
+
+plot(hold, col=c("#444444", "#BB0000"))
+legend("topright", legend=c("pattern 1", "pattern 2"), pch=c(1,19), col=c("#444444", "#BB0000"))
+
+hold <- stDist(p1, p2, 1)
+
+
+ 
+ studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000){
   ##### preparations ----------------
   if (is.null(foos1) |  is.null(foos2) ){
     print("foos1 or foos2 are null")
@@ -562,8 +589,8 @@ if(DataSize < Kinterval[length(Kinterval)] ){
       n = length(PPP)
       Result = outlier_factors_PP(X=X,k=Kinterval,nx=nx,ny=ny,method=method,minpoints=minpoints)
       
-      colum = which.max(Result[n+1,])
-      return(mean(Result[n+1,colum] <= Result[,colum]))
+      Result = apply(Result,1,max)
+      return(mean(Result[n+1] <= Result))
     }
     
     
