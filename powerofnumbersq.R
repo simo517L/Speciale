@@ -241,6 +241,7 @@ studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000)
       grid2 = quadrats(PPP[[i]],nx=nx,ny=ny)
       splitPP = append(splitPP,split(PPP[[i]],f=grid2))
       for(j in c(1:(nx*ny))){
+#### ==== Comment from Ute: where does j occur in this inner loop? =========        
         if(splitPP[[i]]$n >= minpoints){
           if (is.null( PPPStat)){
             PPPStat = matrix(sumfunc(splitPP [[i]],r=rinterval)$iso , byrow = F, ncol = 1,nrow = length(sumfunc(splitPP[[i]],r=rinterval)$iso))
