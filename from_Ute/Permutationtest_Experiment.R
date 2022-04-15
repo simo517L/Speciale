@@ -96,62 +96,71 @@ sumfun_array <- function(list_of_patterns,
 
 
 
-#----------- main program ---------
+#----------- main function ---------
+
+check_outliers <- function(candidates, populations, setup = setup) {
+  ncandidates <- length(candidates)
+  npopulations <- length(populations)
+  
+  popsize <- npopulations %/% ncandidates # should be 20
+  
+  # get pvalues for candidates in i_candidates = 1: ncandidates
+  # For debugging purposes, this can be changed to a smaller number
+
+  icandidates <- 1 : ncandidates
+  nquadsizes = length(setup$quadsizes)
+  
+  pvalues <- array(NA, c(nquadsizes, length(icandidates)))
+  # record also the number of quadrats that had enough points
+  nquads_cand <- nquads_pop <- array(0, c(nquadsizes, length(icandidates)))
+  row.names(pvalues) <- row.names(nquads_cand) <- row.names(nquads_pop) <- names(setup$quadsizes)
+  
+  for (i in seq_along(icandidates)) {
+    # get p-values for one candidate and the population it is tested against
+    icand <- icandidates[i]
+    candidate <- candidates[[icand]]
+    population <- populations[popsize * (icand-1) + (1 : popsize)]
+    
+    # go through all quadrat sizes
+    for (j in seq_along(setup$quadsizes)){
+      qs <- setup$quadsizes[[j]]
+      foos1 <- sumfun_on_quads(candidate, 
+                               nx = qs$nx, ny = qs$ny,
+                               minpoints = setup$minpoints,
+                               rvalues = setup$rvalues,
+                               sumfun = setup$sumfun)
+      # keep only those that have enough points
+      keep1 <- !is.na(foos1[1,])
+      nq1 <- nquads_cand[j, i] <- sum(keep1)
+      if (nq1 > 1) {
+        foos2 <- sumfun_array(population,
+                            nx = qs$nx, ny = qs$ny,
+                            minpoints = setup$minpoints,
+                            rvalues = setup$rvalues,
+                            sumfun = setup$sumfun)
+        keep2 <- !is.na(foos2[1,])
+        nq2 <- nquads_pop[j, i] <- sum(keep2)
+        if (nq2 > 1)
+        pvalues[j, i] <- studpermute.pval(foos1[, keep1],
+                                        foos2[, keep2], 
+                                        nperm = setup$nperm)
+      }  
+    }
+  }
+  list(
+    pvalues = pvalues,
+    nquads_cand = nquads_cand,
+    nquads_pop = nquads_pop)
+}
+
+#----- main program ----------
 
 populations <- readRDS("DataPPP.Rdata")
 candidates <- readRDS("poisPPP.Rdata")
 
-ncandidates <- length(candidates)
-npopulations <- length(populations)
+results <- check_outliers(candidates, populations, setup)
 
-popsize <- npopulations %/% ncandidates # should be 20
-
-# get pvalues for candidates in i_candidates = 1: ncandidates
-# For debugging purposes, this can be changed to a smaller number
-
-icandidates <- 1 : ncandidates
-nquadsizes = length(setup$quadsizes)
-
-pvalues <- array(NA, c(nquadsizes, length(icandidates)))
-# record also the number of quadrats that had enough points
-nquads_cand <- nquads_pop <- array(0, c(nquadsizes, length(icandidates)))
-row.names(pvalues) <- row.names(nquads_cand) <- row.names(nquads_pop) <- names(setup$quadsizes)
-
-for (i in seq_along(icandidates)) {
-  # get p-values for one candidate and the population it is tested against
-  icand <- icandidates[i]
-  candidate <- candidates[[icand]]
-  population <- populations[popsize * (icand-1) + (1 : popsize)]
-  
-  # go through all quadrat sizes
-  for (j in seq_along(setup$quadsizes)){
-    qs <- setup$quadsizes[[j]]
-    foos1 <- sumfun_on_quads(candidate, 
-                             nx = qs$nx, ny = qs$ny,
-                             minpoints = setup$minpoints,
-                             rvalues = setup$rvalues,
-                             sumfun = setup$sumfun)
-    # keep only those that have enough points
-    keep1 <- !is.na(foos1[1,])
-    nq1 <- nquads_cand[j, i] <- sum(keep1)
-    if (nq1 > 1) {
-      foos2 <- sumfun_array(population,
-                          nx = qs$nx, ny = qs$ny,
-                          minpoints = setup$minpoints,
-                          rvalues = setup$rvalues,
-                          sumfun = setup$sumfun)
-      keep2 <- !is.na(foos2[1,])
-      nq2 <- nquads_pop[j, i] <- sum(keep2)
-      if (nq2 > 1)
-      pvalues[j, i] <- studpermute.pval(foos1[, keep1],
-                                      foos2[, keep2], 
-                                      nperm = setup$nperm)
-    }  
-  }
-}
-
-save(pvalues, nquads_cand, nquads_pop, 
-     file = "Results_Permutationtest_Pois.RData")
+save(results, file = "Results_Permutationtest_Pois.RData")
 
 ##------------ checking uniformity ------------
 # a qqplot
