@@ -22,17 +22,15 @@ stDistPP = function(X,Y,...){
   p2 = cbind(Y$x,Y$y)
   return(stDist(p1, p2, ...))
 }
-XX =rpoispp(10)
-YY =rpoispp(10)
-hold2  = stDistPP(XX,YY,pm=1)
-hold <- stDist(cbind(XX$x,XX$y), cbind(YY$x,YY$y), 1,bypassCheck=T)
-
+#XX =rpoispp(10)
+#YY =rpoispp(10)
+#hold2  = stDistPP(XX,YY,pm=1)
+#hold <- stDist(cbind(XX$x,XX$y), cbind(YY$x,YY$y), 1,bypassCheck=T)
 
 
 studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000){
   ##### preparations ----------------
   if (is.null(foos1) |  is.null(foos2) ){
-    print("foos1 or foos2 are null")
     ptt <- list(statistic = NaN, 
                 p.value = NaN, 
                 alternative = "foos1 or foos2 are null", 
@@ -44,7 +42,6 @@ studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000){
   n <- dim(foos1)[1]
   m1 <- dim(foos1)[2]
   if (m1 < 2){
-    print("foos1 is not a matrix")
     datname <- paste( deparse(substitute(foos1)),"and", deparse(substitute(foos2)))
     ptt <- list(statistic = NaN, 
                 p.value = NaN, 
@@ -57,7 +54,6 @@ studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000){
     
   } # need at least two per group
   if(dim(foos2)[1] != n){
-    print("foos2 does not have the same lenght as foos1")
     datname <- paste( deparse(substitute(foos1)),"and", deparse(substitute(foos2)))
     ptt <- list(statistic = NaN, 
                 p.value = NaN, 
@@ -69,7 +65,6 @@ studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000){
   } # dimensions
   m2 <- dim(foos2)[2]
   if (m2 < 2){
-    print("foos2 is not a matrix")
     datname <- paste( deparse(substitute(foos1)),"and", deparse(substitute(foos2)))
     ptt <- list(statistic = NaN, 
                 p.value = NaN, 
@@ -79,59 +74,66 @@ studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000){
     class(ptt) <- "htest"
     return(ptt)
   } # need at least two per group
+  
   m <- m1+m2
   foos <- cbind(foos1, foos2)
   # get the permutations. 
   # If m1 == m2, break the symmetry and save half time and memory!
-  
-  allcomb <- is.null(nperm)
-  ncomb <- if (m1 == m2) choose(m-1, m1-1) else choose(m, m1)
+  # 
+  # allcomb <- is.null(nperm)
+  # ncomb <- if (m1 == m2) choose(m-1, m1-1) else choose(m, m1)
   # if nperm is larger than the actual number of combinations, also use all of them
-  if (!allcomb)
-  {
-    # ncomb <- if (m1 == m2) choose(m-1, m1-1) else choose(m, m1)
-    if (ncomb < (nperm + 1)) allcomb <- TRUE
-  }
-  if (allcomb) 
-  {
-    if (m1 == m2) index1 <- rbind(1, combn(m - 1, m1 - 1) + 1)
-    else index1 <- combn(m, m1)
-  } else {
-    if (m1 == m2) index1 <- rbind(1, replicate(nperm, sample(m - 1, m1 - 1) + 1)) 
-    else index1 <- replicate(nperm, sample(m, m1)) 
-    index1 <- cbind((1 : m1), index1) # the first is the original
-  }
+  # if (!allcomb)
+  # {
+  # ncomb <- if (m1 == m2) choose(m-1, m1-1) else choose(m, m1)
+  #  if (ncomb < (nperm + 1)) allcomb <- TRUE
+  # }
+  # if (allcomb)
+  #   {
+  #   if (m1 == m2) index1 <- rbind(1, combn(m - 1, m1 - 1) + 1)
+  #   else index1 <- combn(m, m1)
+  # } else {
+  #   if (m1 == m2) index1 <- rbind(1, replicate(nperm, sample(m - 1, m1 - 1) + 1)) 
+  #   else index1 <- replicate(nperm, sample(m, m1)) 
+  #   index1 <- cbind((1 : m1), index1) # the first is the original
+  # }
+  # 
+  index1 <- cbind(1:m1, replicate(nperm, sample(m, m1)))
   
   # do the calculations the good old fashioned way with sums and sqs, to save time
   
+  foos_sq <- foos^2
   SX. <- apply (foos, 1, sum)
-  SXX. <- apply (foos^2, 1, sum)
+  SXX. <- apply (foos_sq, 1, sum)
   
-  Tstatistic <- function (ind) # could be further optimized in symmetric case 
+  Tstatistic <- function (ind) # 
   {
     SX1 <- apply(foos[, ind], 1, sum)
-    SXX1 <- apply(foos[, ind]^2, 1, sum)
+    SXX1 <- apply(foos_sq[, ind], 1, sum)
     SX2 <- SX. - SX1
     SXX2 <- SXX. - SXX1
     mu1 <- SX1 / m1 
     mu2 <- SX2 / m2
-    ss1 <- (SXX1 - (SX1^2 / m1)) / ((m1-1) / m1)
-    ss2 <- (SXX2 - (SX2^2 / m2)) / ((m2-1) / m2)
+    ss1 <- (SXX1 - (SX1^2 / m1)) / ((m1-1) * m1)
+    ss2 <- (SXX2 - (SX2^2 / m2)) / ((m2-1) * m2)
     
-    if (use.tbar) return (sum((mu1 -mu2)^2) / sum((ss1 + ss2))) else 
-      return (mean((mu1 -mu2)^2 / (ss1 + ss2), na.rm=T))
+    ss <- ss1 + ss2
+    meandiff_sq <- (mu1 - mu2)^2
+    
+    result <- if (use.tbar) (sum(meandiff_sq) / sum(ss)) 
+    else (mean(meandiff_sq / ss, na.rm=T))
+    result
   }
   
   Tvals <- apply(index1, 2, Tstatistic)
   
-  pval <- mean(Tvals >= Tvals[1])           
+  pval <- mean(Tvals >= Tvals[1], na.rm = TRUE)           
   stat <- Tvals[1]
   names(stat) <- if(use.tbar) "Tbar" else "T"
   datname <- paste( deparse(substitute(foos1)),"and", deparse(substitute(foos2)))
   method <- c(paste("Studentized two sample permutation test for fda, using T",
                     ifelse(use.tbar, "bar", ""), sep=""),
-              ifelse(allcomb, paste("exact test, using all",ncomb,"permutations (combinations)"), 
-                     paste("using",nperm,"randomly selected permuations")))
+              paste("using",nperm,"randomly selected permuations"))
   alternative <- "samples not exchangeable"
   ptt <- list(statistic = stat, 
               p.value = pval, 
@@ -142,8 +144,8 @@ studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000){
   return(ptt)
 }
 
-
-OutlierPPP_Permu = function(Outlier,PPP,nx,ny=nx,minpoints=20,use.tbar=1,nperm=1,rinterval=NULL,sumfunc=Kest,...){
+OutlierPPP_Permu = function(Outlier,PPP,nx,ny=nx,minpoints=20,use.tbar=FALSE,rinterval,nperm=999,sumfunc=Kest,...){
+  
   grid1 = quadrats(Outlier,nx=nx,ny=ny)
   splitOutlier = split(Outlier,f=grid1)
   OutlierStat = NULL
@@ -151,9 +153,6 @@ OutlierPPP_Permu = function(Outlier,PPP,nx,ny=nx,minpoints=20,use.tbar=1,nperm=1
     if(splitOutlier[[i]]$n >= minpoints){
       if (is.null(OutlierStat)){
         TEMPF =  sumfunc(splitOutlier[[i]],r=rinterval)
-        if (is.null(rinterval)){
-          rinterval = TEMPF$r
-        }
         OutlierStat = matrix(TEMPF$iso , byrow = F, ncol = 1,nrow = length(TEMPF$iso))
       } else{
         OutlierStat = cbind(OutlierStat,sumfunc(splitOutlier[[i]],r=rinterval)$iso )
@@ -162,42 +161,27 @@ OutlierPPP_Permu = function(Outlier,PPP,nx,ny=nx,minpoints=20,use.tbar=1,nperm=1
   }
   n = length(PPP)
   PPPStat = NULL
-  if (is.ppplist(PPP)){
-    splitPP = list()
-    for (i in c(1:n)){
-      grid2 = quadrats(PPP[[i]],nx=nx,ny=ny)
-      splitPP = append(splitPP,split(PPP[[i]],f=grid2))
-      for(j in c(1:(nx*ny))){
-        if(splitPP[[i]]$n >= minpoints){
-          if (is.null( PPPStat)){
-            PPPStat = matrix(sumfunc(splitPP [[i]],r=rinterval)$iso , byrow = F, ncol = 1,nrow = length(sumfunc(splitPP[[i]],r=rinterval)$iso))
-          } else{
-            PPPStat = cbind(PPPStat,sumfunc(splitPP [[i]],r=rinterval)$iso )
-          }
-        }
-      }
-    }
-  } else{
-    grid1 = quadrats(PPP,nx=nx,ny=ny)
-    splitPPP = split(PPP,f=grid1)
-    for(i in c(1:(nx*ny))){
-      if(splitPPP[[i]]$n >= minpoints){
-        if (is.null(PPPStat)){
-          TEMPF =  sumfunc(splitPPP[[i]],r=rinterval)
-          PPPStat= matrix(TEMPF$iso , byrow = F, ncol = 1,nrow = length(TEMPF$iso))
+  splitPP = list()
+  for (i in c(1:n)){
+    grid2 = quadrats(PPP[[i]],nx=nx,ny=ny)
+    splitPP = split(PPP[[i]],f=grid2)
+    for(j in c(1:(nx*ny))){
+      #### ==== Comment from Ute: where does j occur in this inner loop? =========        
+      if(splitPP[[j]]$n >= minpoints){
+        sumfuncR = sumfunc(splitPP[[j]],r=rinterval)$iso
+        if (is.null( PPPStat)){
+          PPPStat = matrix(sumfuncR , byrow = F, ncol = 1,nrow = length(sumfuncR))
         } else{
-          PPPStat = cbind(PPPStat,sumfunc(splitPPP[[i]],r=rinterval)$iso )
+          PPPStat = cbind(PPPStat,sumfuncR )
         }
       }
     }
-    
-    
   }
-  
-  
   
   return(studpermut.test.Ute(foos1 = OutlierStat,foos2= PPPStat,use.tbar=use.tbar,nperm=nperm))
 }
+
+  
 
 nearest_pointdist = function(X,Y){
   LX = coords(X)
@@ -239,7 +223,6 @@ distMppp = function(X,nx=3,ny=nx,method=1,minpoints=20,sumfunc=Kest,...){
   return(M)
 }
 
-registerDoParallel(5)
 
 
 #setwd("/home/au591455/Rstuff/Results") 
@@ -280,38 +263,84 @@ conf_matrix = function(vec1,vec2){
 }
 
 eval_clust = function(distmatrix,k,true_label,methodhc="average"){
-  hc = agnes(distmatrix,method = methodhc)
-  est_label = cutree(hc,k=k)
-  randindex = adj.rand.index(est_label ,TrueLabel)
-  CM = conf_matrix(true_label,est_label)
-  Pr = CM[1,1]/(CM[1,1]+CM[2,1])  
-  R = CM[1,1]/(CM[1,1]+CM[1,2])
-  F_measure = 2*Pr*R/(Pr+R)
-  return(c(hc$ac,randindex,F_measure))
+  n=length(methodhc)
+  if (n==1){
+    hc = agnes(distmatrix,method = methodhc)
+    est_label = cutree(hc,k=k)
+    randindex = adj.rand.index(est_label ,TrueLabel)
+    CM = conf_matrix(true_label,est_label)
+    Pr = CM[1,1]/(CM[1,1]+CM[2,1])  
+    R = CM[1,1]/(CM[1,1]+CM[1,2])
+    F_measure = 2*Pr*R/(Pr+R)
+    return(c(hc$ac,randindex,F_measure)) 
+  } else{
+    acval = c(1:n)
+    randval = c(1:n)
+    Fval = c(1:n)
+    for(i in c(1:n)){
+      hc = agnes(distmatrix,method = methodhc[i])
+      acval[i] = hc$ac
+      est_label = cutree(hc,k=k)
+      randval[i]  = adj.rand.index(est_label ,TrueLabel)
+      CM = conf_matrix(true_label,est_label)
+      Pr = CM[1,1]/(CM[1,1]+CM[2,1])  
+      R = CM[1,1]/(CM[1,1]+CM[1,2])
+      Fval[i] = 2*Pr*R/(Pr+R)
+    }
+  }
+
+  return(c(acval,randval,Fval))
 }
 
-MM  = distMppp(c(Data[1:5],Matern4a[1:5],Clust4a[1:5]),method=2)
-hc2= agnes(MM)
-plot(hc2)
-v
-MM2 = distMppp(c(Data[1:5],Matern4b[1:5],Clust4c[1:5]),method=2)
-hc3= agnes(MM2)
-plot(hc3)
-TrueLabel = c(rep(1,5),rep(2,5),rep(3,5))
-cutree(hc2,k=3)
-cutree(hc3,k=3)
-eval_clust(MM,k=3,true_label =TrueLabel,methodhc = "average" )
-eval_clust(MM2,k=3,true_label =TrueLabel,methodhc = "average" )
 
-eval_clust(MM,k=3,true_label =TrueLabel,methodhc = "single" )
-eval_clust(MM2,k=3,true_label =TrueLabel,methodhc = "single" )
+registerDoParallel(8)
+rinterval = seq(0,0.125,length.out = 30)
+m=1000
+intval = seq(1,m,10)
+hceval1 <- foreach (i= c(1:10), .combine="cbind", .packages = c("spatstat","cluster","ppMeasures","fossil")) %dopar% {
+  vec = c((i*5-4):(i*5))
+  MM  = distMppp(c(Data[vec],Matern4b[vec],Clust4a[vec]),method=2)
+  eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
+}
 
+for(j in c(2:50)){
+  print(j)
+  hceval1temp <- foreach (i= c(intval[j]:(intval[j+1]-1)), .combine="cbind", .packages = c("spatstat","cluster","ppMeasures","fossil")) %dopar% {
+    vec = c((i*5-4):(i*5))
+    MM  = distMppp(c(Data[vec],Matern4b[vec],Clust4a[vec]),method=2)
+    eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
+  }
+  hceval1  =cbind(hceval1,hceval1temp)
+}
 
-eval_clust(MM,k=3,true_label =TrueLabel,methodhc = "complete" )
-eval_clust(MM2,k=3,true_label =TrueLabel,methodhc = "complete" )
+hceval2 <- foreach (i= c(1:10), .combine="cbind", .packages = c("spatstat","cluster","ppMeasures","fossil")) %dopar% {
+  vec = c((i*5-4):(i*5))
+  MM  = distMppp(c(Data[vec],Matern4a[vec],Clust4c[vec]),method=2)
+  eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
+}
 
-rand.index(cutree(hc2,k=3),TrueLabel)
-rand.index(cutree(hc3,k=3),TrueLabel)
+for(j in c(2:50)){
+  print(j)
+  hceval2temp <- foreach (i= c(intval[j]:(intval[j+1]-1)), .combine="cbind", .packages = c("spatstat","cluster","ppMeasures","fossil")) %dopar% {
+    vec = c((i*5-4):(i*5))
+    MM  = distMppp(c(Data[vec],Matern4a[vec],Clust4c[vec]),method=2)
+    eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
+  }
+  hceval2  =cbind(hceval2,hceval2temp)
+}
 
-adj.rand.index(cutree(hc2,k=3),TrueLabel)
-adj.rand.index(cutree(hc3,k=3),TrueLabel)
+hceval3 <- foreach (i= c(1:10), .combine="cbind", .packages = c("spatstat","cluster","ppMeasures","fossil")) %dopar% {
+  vec = c((i*5-4):(i*5))
+  MM  = distMppp(c(Data[vec],Matern4a[vec],Matern4b[vec],Clust4a[vec],Clust4b[vec],Clust4c[vec]),method=2)
+  eval_clust(MM,k=6,true_label =TrueLabel,methodhc = c("single","average","complete" ))
+}
+
+for(j in c(2:50)){
+  print(j)
+  hceval3temp <- foreach (i= c(intval[j]:(intval[j+1]-1)), .combine="cbind", .packages = c("spatstat","cluster","ppMeasures","fossil")) %dopar% {
+    vec = c((i*5-4):(i*5))
+    MM  = distMppp(c(Data[vec],Matern4a[vec],Matern4b[vec],Clust4a[vec],Clust4b[vec],Clust4c[vec]),method=2)
+    eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
+  }
+  hceval3  =cbind(hceval3,hceval3temp)
+}

@@ -219,36 +219,38 @@ studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000)
 Data =  readRDS(file = "DataPPP.Rdata")
 Matern4a = readRDS(file = "Matern_a.Rdata")
 
-poweroftest(Outlier = Matern4a[1:1000],Data=Data,name ="PowerMaternA.Rdata",m=mm,squares = squares,newlog=T,minpoints=5 )
+poweroftest(Outlier = Matern4a[1:1000],Data=Data,name ="PowerMaternA.Rdata",m=mm,squares = squares,newlog=T,minpoints=10 )
 
 Matern4b = readRDS(file = "Matern_b.Rdata")
 
-poweroftest(Outlier = Matern4b[1:1000] ,Data=Data,name ="PowerMaternB.Rdata",m=mm,squares = squares)
+poweroftest(Outlier = Matern4b[1:1000] ,Data=Data,name ="PowerMaternB.Rdata",m=mm,squares = squares,minpoints=10)
 
 Clust4a = readRDS(file = "Clust_a.Rdata")
 
-poweroftest(Outlier = Clust4a[1:1000]  ,Data=Data,name ="PowerClusterA.Rdata",m=mm,squares = squares )
+poweroftest(Outlier = Clust4a[1:1000]  ,Data=Data,name ="PowerClusterA.Rdata",m=mm,squares = squares,minpoints=10 )
 
 Clust4b = readRDS(file = "Clust_b.Rdata")
 
-poweroftest(Outlier = Clust4b[1:1000]  ,Data=Data,name ="PowerClusterB.Rdata",m=mm,squares = squares)
+poweroftest(Outlier = Clust4b[1:1000]  ,Data=Data,name ="PowerClusterB.Rdata",m=mm,squares = squares,minpoints=10)
 
 
 Clust4c = readRDS(file = "Clust_c.Rdata")
 
-poweroftest(Outlier = Clust4c[1:1000]  ,Data=Data,name ="PowerClusterC.Rdata",m=mm,squares = squares )
+poweroftest(Outlier = Clust4c[1:1000]  ,Data=Data,name ="PowerClusterC.Rdata",m=mm,squares = squares,minpoints=10 )
 
 
 
 poistest  = readRDS(file = "poisPPP.Rdata")
 
-poweroftest(Outlier = poistest[1:1000] ,Data=Data,name ="PowerpoisTest.Rdata",m=mm,squares = squares,minpoints =20 )
+poweroftest(Outlier = poistest[1:1000] ,Data=Data,name ="PowerpoisTest.Rdata",m=mm,squares = squares,minpoints =10 )
 
 #poistestP1  = readRDS(file = "PowerpoisTest.Rdata")
+#is.na(colSums(poistestP1))
+
 #rowMeans(poistestP1< 0.05)
 
 
-poweroftest(Outlier = rpoispp(250,nsim=40),Data=rpoispp(250,nsim=40*20),name ="PowerpoisTest6.Rdata",m=5,squares = squares[1:5],minpoints = 20 )
+#poweroftest(Outlier = rpoispp(250,nsim=40),Data=rpoispp(250,nsim=40*20),name ="PowerpoisTest6.Rdata",m=5,squares = squares[1:5],minpoints = 20 )
 #poistestP6  = readRDS(file = "PowerpoisTest6.Rdata")
 #rowMeans(poistestP6< 0.05)
 
