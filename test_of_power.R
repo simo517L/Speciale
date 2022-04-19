@@ -222,7 +222,7 @@ conf_Result3 = conf_of_power(ResultpowerM3,1000)
 conf_Result4 = conf_of_power(ResultpowerM4,1000)
 conf_Result5 = conf_of_power(ResultpowerM5,1000)
 TestResult = list(ResultpowerM2,ResultpowerM3,ResultpowerM4,ResultpowerM5)
-plot_of_power = function(Data,Size,X,conf = FALSE,legendC = FALSE,legendNames=NULL){
+plot_of_power = function(Data,Size,X,conf = FALSE,title="",legendC = FALSE,legendNames=NULL){
   if ( is.list(Data) & length(Data) > 1){
     n = length(Data)
     Results = list()
@@ -230,12 +230,12 @@ plot_of_power = function(Data,Size,X,conf = FALSE,legendC = FALSE,legendNames=NU
       Results[[i]] = conf_of_power(Data[[i]],Size)
     }
     if (conf == FALSE){
-      plot(X,Results[[1]]$p_value,type="l",lty=1,col=1,ylim = c(0,1),ylab = "Rate of rejection")
+      plot(X,Results[[1]]$p_value,type="l",lty=1,col=1,ylim = c(0,1),ylab = "Rate of rejection",main = title)
       for ( j in c(2:n)){
         lines(X,Results[[j]]$p_value,lty=j,col=j)
       }
     }     else{
-      plot(X,Results[[1]]$p_value,type="l",lty=1,col=1,ylim = c(0,1),ylab = "Rate of rejection")
+      plot(X,Results[[1]]$p_value,type="l",lty=1,col=1,ylim = c(0,1),ylab = "Rate of rejection",main = title)
       lines(X,Results[[1]]$upper_lim,lty=2,col=1)
       lines(X,Results[[1]]$lower_lim,lty=2,col=1)
       for ( j in c(2:n)){
@@ -249,18 +249,18 @@ plot_of_power = function(Data,Size,X,conf = FALSE,legendC = FALSE,legendNames=NU
     Results = conf_of_power(Data,Size)
 
     if (conf == FALSE){
-      plot(X,Results$p_value,type="l",lty=1,col=1,ylim = c(0,1),ylab = "Rate of rejection")
+      plot(X,Results$p_value,type="l",lty=1,col=1,ylim = c(0,1),ylab = "Rate of rejection",main = title)
 
     }     else{
-      plot(X,Results$p_value,type="l",lty=1,col=1,ylim = c(0,1),ylab = "Rate of rejection")
+      plot(X,Results$p_value,type="l",lty=1,col=1,ylim = c(0,1),ylab = "Rate of rejection",main = title)
       lines(X,Results$upper_lim,lty=2,col=1)
       lines(X,Results$lower_lim,lty=2,col=1)
     
   }} else {
     n=1
     Results = conf_of_power(Data,Size)
-    if (conf == FALSE){plot(X,Results$p_value,type="l",lty=1,col=1,ylim = c(0,1),ylab = "Rate of rejection")}
-    else {plot(X,Results$p_value,type="l",lty=1,col=1,ylim = c(0,1),ylab = "Rate of rejection")
+    if (conf == FALSE){plot(X,Results$p_value,type="l",lty=1,col=1,ylim = c(0,1),ylab = "Rate of rejection",main = title)}
+    else {plot(X,Results$p_value,type="l",lty=1,col=1,ylim = c(0,1),ylab = "Rate of rejection",main = title)
       lines(X,Results$upper_lim,lty=2,col=1)
       lines(X,Results$lower_lim,lty=2,col=1)
       }
@@ -322,35 +322,49 @@ result_Mata_sumfunc_sq = readRDS(file = "PowerMaternA.Rdata")
 
 number_of_squares = c(3,4,6,8,9,12) 
 par(mfrow = c(3,2))
-power_Mata_sunfunc_sq = result_Mata_sumfunc_sq[,is.nan(colMeans(result_Mata_sumfunc_sq)) != T] <=  0.05
+sum(is.nan(colMeans(result_Mata_sumfunc_sq)))
+
+result_Mata_sumfunc_sq = result_Mata_sumfunc_sq[-6,]
+sum(is.nan(colMeans(result_Mata_sumfunc_sq)))
+
+result_Mata_sumfunc_sq = result_Mata_sumfunc_sq[-5,]
+sum(is.nan(colMeans(result_Mata_sumfunc_sq)))
+
+result_Mata_sumfunc_sq = result_Mata_sumfunc_sq[-4,]
+sum(is.nan(colMeans(result_Mata_sumfunc_sq)))
+
+result_Mata_sumfunc_sq = result_Mata_sumfunc_sq[-3,]
+sum(is.nan(colMeans(result_Mata_sumfunc_sq)))
+
+power_Mata_sunfunc_sq = result_Mata_sumfunc_sq[,!is.nan(colMeans(result_Mata_sumfunc_sq))] <=  0.05
 sum(is.nan(colMeans(result_Mata_sumfunc_sq)) == T)
-plot_of_power(Data=power_Mata_sunfunc_sq,Size = dim(power_Mata_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = T)
+plot_of_power(Data=power_Mata_sunfunc_sq,title = "MaternA",Size = dim(power_Mata_sunfunc_sq)[2],X= number_of_squares[c(1,2)],conf = T,legendC = T)
 
 result_Matb_sumfunc_sq = readRDS(file = "PowerMaternB.Rdata")
 power_Matb_sunfunc_sq = result_Matb_sumfunc_sq[,is.nan(colMeans(result_Matb_sumfunc_sq)) != T] <=  0.05
 sum(is.nan(colMeans(result_Matb_sumfunc_sq)) == T)
-plot_of_power(Data=power_Matb_sunfunc_sq,Size = dim(power_Matb_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = T)
+plot_of_power(Data=power_Matb_sunfunc_sq,title = "MaternB",Size = dim(power_Matb_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = T)
 
 result_clustA_sumfunc_sq = readRDS(file = "PowerClusterA.Rdata")
 power_clustA_sunfunc_sq = result_clustA_sumfunc_sq[,is.nan(colMeans(result_clustA_sumfunc_sq)) != T] <=  0.05
 sum(is.nan(colMeans(result_clustA_sumfunc_sq)) == T)
-plot_of_power(Data=power_clustA_sunfunc_sq,Size = dim(power_clustA_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = T)
+plot_of_power(Data=power_clustA_sunfunc_sq,title = "ClustA",Size = dim(power_clustA_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = T)
 
 result_clustB_sumfunc_sq = readRDS(file = "PowerClusterB.Rdata")
 power_clustB_sunfunc_sq = result_clustB_sumfunc_sq[,is.nan(colMeans(result_clustB_sumfunc_sq)) != T] <=  0.05
 sum(is.nan(colMeans(result_clustB_sumfunc_sq)) == T)
-plot_of_power(Data=power_clustB_sunfunc_sq,Size = dim(power_clustB_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = T)
+plot_of_power(Data=power_clustB_sunfunc_sq,title = "ClustB",Size = dim(power_clustB_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = T)
 
 
 result_clustC_sumfunc_sq = readRDS(file = "PowerClusterC.Rdata")
 power_clustC_sunfunc_sq = result_clustC_sumfunc_sq[,is.nan(colMeans(result_clustC_sumfunc_sq)) != T] <=  0.05
 
-plot_of_power(Data=power_clustC_sunfunc_sq,Size = dim(power_clustC_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = T)
+plot_of_power(Data=power_clustC_sunfunc_sq,title = "ClustC",Size = dim(power_clustC_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = T)
 
 
-result_pois_sumfunc_sq = readRDS(file = "Powerpois.Rdata")
+result_pois_sumfunc_sq = readRDS(file = "PowerpoisTest.Rdata")
 power_pois_sunfunc_sq = result_pois_sumfunc_sq[,is.nan(colMeans(result_pois_sumfunc_sq)) != T] <=  0.05
-plot_of_power(Data=power_pois_sunfunc_sq,Size = dim(power_pois_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = T)
+plot_of_power(Data=power_pois_sunfunc_sq,title = "Pois",Size = dim(power_pois_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = T)
 
 par(mfrow = c(1,1))
 

@@ -312,7 +312,7 @@ for(j in c(2:50)){
   }
   hceval1  =cbind(hceval1,hceval1temp)
 }
-
+timestamp()
 hceval2 <- foreach (i= c(1:10), .combine="cbind", .packages = c("spatstat","cluster","ppMeasures","fossil")) %dopar% {
   vec = c((i*5-4):(i*5))
   MM  = distMppp(c(Data[vec],Matern4a[vec],Clust4c[vec]),method=2)
@@ -328,6 +328,9 @@ for(j in c(2:50)){
   }
   hceval2  =cbind(hceval2,hceval2temp)
 }
+timestamp()
+stopImplicitCluster()
+
 
 hceval3 <- foreach (i= c(1:10), .combine="cbind", .packages = c("spatstat","cluster","ppMeasures","fossil")) %dopar% {
   vec = c((i*5-4):(i*5))
