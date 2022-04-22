@@ -14,7 +14,6 @@ library("foreach",lib.loc=liblocation )
 library("doParallel",lib.loc=liblocation )
 
 registerDoParallel(3)
-squares = list(c(3,1),c(2,2),c(3,2),c(4,2),c(3,3),c(3,4))
 mm=20
 timeofpowertest  =c(1:6)
 squares = list(c(3,1),c(2,2),c(3,2),c(4,2),c(3,3),c(3,4))
@@ -219,34 +218,35 @@ studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000)
 Data =  readRDS(file = "DataPPP.Rdata")
 Matern4a = readRDS(file = "Matern_a.Rdata")
 
-poweroftest(Outlier = Matern4a[1:1000],Data=Data,name ="PowerMaternA.Rdata",m=mm,squares = squares,newlog=T,minpoints=10 )
+poweroftest(Outlier = Matern4a[1:1000],Data=Data,name ="PowerMaternA.Rdata",m=mm,squares = squares,newlog=T,minpoints=5 )
 
 Matern4b = readRDS(file = "Matern_b.Rdata")
 
-poweroftest(Outlier = Matern4b[1:1000] ,Data=Data,name ="PowerMaternB.Rdata",m=mm,squares = squares,minpoints=10)
+poweroftest(Outlier = Matern4b[1:1000] ,Data=Data,name ="PowerMaternB.Rdata",m=mm,squares = squares,minpoints=5)
 
 Clust4a = readRDS(file = "Clust_a.Rdata")
 
-poweroftest(Outlier = Clust4a[1:1000]  ,Data=Data,name ="PowerClusterA.Rdata",m=mm,squares = squares,minpoints=10 )
+poweroftest(Outlier = Clust4a[1:1000]  ,Data=Data,name ="PowerClusterA.Rdata",m=mm,squares = squares,minpoints=5 )
 
 Clust4b = readRDS(file = "Clust_b.Rdata")
 
-poweroftest(Outlier = Clust4b[1:1000]  ,Data=Data,name ="PowerClusterB.Rdata",m=mm,squares = squares,minpoints=10)
+poweroftest(Outlier = Clust4b[1:1000]  ,Data=Data,name ="PowerClusterB.Rdata",m=mm,squares = squares,minpoints=5)
 
 
 Clust4c = readRDS(file = "Clust_c.Rdata")
 
-poweroftest(Outlier = Clust4c[1:1000]  ,Data=Data,name ="PowerClusterC.Rdata",m=mm,squares = squares,minpoints=10 )
+poweroftest(Outlier = Clust4c[1:1000]  ,Data=Data,name ="PowerClusterC.Rdata",m=mm,squares = squares,minpoints=5 )
 
 
 
 poistest  = readRDS(file = "poisPPP.Rdata")
 
-poweroftest(Outlier = poistest[1:1000] ,Data=Data,name ="PowerpoisTest.Rdata",m=mm,squares = squares,minpoints =10 )
+poweroftest(Outlier = poistest[1:1000] ,Data=Data,name ="PowerpoisTest.Rdata",m=mm,squares = squares,minpoints =5 )
 
 #poistestP1  = readRDS(file = "PowerpoisTest.Rdata")
 #is.na(colSums(poistestP1))
-
+#sum(is.na(colSums(poistestP1)))
+#poistestP1 = poistestP1[,!is.na(colSums(poistestP1))]
 #rowMeans(poistestP1< 0.05)
 
 

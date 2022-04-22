@@ -337,22 +337,22 @@ Data =  readRDS(file = "DataPPP.Rdata")
 
 Matern4a = readRDS(file = "Matern_a.Rdata")
 #Matern4a1 = Matern4a[1:6]
-powertest_OF_sq(Outlier = Matern4a,Data=Data,name ="Power_MaternA_OFM1sq.Rdata",method = 1,m=3,squares = squares,DataSize=20,newlog=T)
+powertest_OF_sq(Outlier = Matern4a,Data=Data,name ="Power_MaternA_OFM1sq.Rdata",method = 2,m=mm,squares = squares,DataSize=20,newlog=T)
 
 Matern4b = readRDS(file = "Matern_b.Rdata")
-powertest_OF_sq(Outlier = Matern4b,Data=Data,name ="Power_MaternB_OFM1sq.Rdata",method = 1,m=mm,squares = squares,DataSize=20)
+powertest_OF_sq(Outlier = Matern4b,Data=Data,name ="Power_MaternB_OFM1sq.Rdata",method = 2,m=mm,squares = squares,DataSize=20)
 
 Clust4a = readRDS(file = "Clust_a.Rdata")
-powertest_OF_sq(Outlier = Clust4a ,Data=Data,name ="Power_ClusterA_OFM1sq.Rdata",method = 1,m=mm,squares = squares,DataSize=20 )
+powertest_OF_sq(Outlier = Clust4a ,Data=Data,name ="Power_ClusterA_OFM1sq.Rdata",method = 2,m=mm,squares = squares,DataSize=20 )
 
 Clust4b = readRDS(file = "Clust_b.Rdata")
-powertest_OF_sq(Outlier = Clust4b ,Data=Data,name ="Power_ClusterB_OFM1sq.Rdata",method = 1,m=mm,squares = squares,DataSize=20)
+powertest_OF_sq(Outlier = Clust4b ,Data=Data,name ="Power_ClusterB_OFM1sq.Rdata",method = 2,m=mm,squares = squares,DataSize=20)
 
 Clust4c = readRDS(file = "Clust_c.Rdata")
-powertest_OF_sq(Outlier = Clust4c ,Data=Data,name ="Power_ClusterC_OFM1sq.Rdata",method = 1,m=mm,squares = squares,DataSize=20 )
+powertest_OF_sq(Outlier = Clust4c ,Data=Data,name ="Power_ClusterC_OFM1sq.Rdata",method = 2,m=mm,squares = squares,DataSize=20 )
 
 
 poistest  = readRDS(file = "poisPPP.Rdata")
-powertest_OF_sq(Outlier = poistest ,Data=Data,name ="pois_OFM1sq.Rdata",method = 1,m=mm,squares = squares,DataSize=20 )
+powertest_OF_sq(Outlier = poistest ,Data=Data,name ="pois_OFM1sq.Rdata",method = 2,m=mm,squares = squares,DataSize=20 )
 
 stopImplicitCluster()

@@ -121,12 +121,12 @@ outlier_factors_PP = function(X,k,nx,ny=ny,method=1,minpoints=20,...){
 }
 
 # We make a function, to make a similar plot like in the document
-plot_k = function(X,kval){
+plot_k = function(X,kval,title = ""){
   max_val = do.call(pmax,as.data.frame(t(X)))
   min_val = do.call(pmin,as.data.frame(t(X)))
   mean_val = colMeans(X)
   sdev = apply(X,2,sd)
-  plot(kval,mean_val,ylim = c(min(min_val),max(max_val)),xlab="k",ylab="outlier factor LOF")
+  plot(kval,mean_val,main=title,ylim = c(min(min_val),max(max_val)),xlab="k",ylab="outlier factor LOF")
   lines(max_val, lty =2, col=2 )
   lines(min_val,lty =3,col=3)
   arrows(kval, mean_val-sdev, kval, mean_val+sdev, length=0.01, angle=90, code=3) #https://stackoverflow.com/questions/13032777/scatter-plot-with-error-bars
@@ -150,13 +150,15 @@ legend("topright",cex =0.50, legend =c("max","mean with std","min"),lty=c(2,1,3)
 sdev = apply(OF_nn,2,sd)
 plot(sdev)
 
-par(mfrow=c(1,2))
-
-plot_k(OF_st,c(2:50))
+#https://stackoverflow.com/questions/10389967/common-legend-for-multiple-plots-in-r
+par(oma = c(4,1,1,1), mfrow = c(1, 2), mar = c(1, 2, 2, 1))
+plot_k(OF_st,c(2:50),title = "Spike-time")
 #legend("right",cex =0.50, legend =c("max","mean with std","min"),lty=c(2,1,3))
 
-plot_k(OF_nn, c(2:50))
-#legend("topright",cex =0.50, legend =c("max","mean with std","min"),lty=c(2,1,3))
+plot_k(OF_nn, c(2:50),title = "Nearest neighbor")
+par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), mar = c(0, 0, 0, 0), new = TRUE)
+plot(0, 0, type = 'l', bty = 'n', xaxt = 'n', yaxt = 'n')
+legend("bottom",cex =0.75, legend =c("max","mean with std","min"),lty=c(2,1,3),col=c("red","black","green"),horiz = TRUE)
 
 par(mfrow=c(1,1))
 
