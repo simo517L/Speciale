@@ -1,5 +1,5 @@
-#liblocation = "/home/au591455/Rstuff/library"
-liblocation = "/Users/simon/Desktop/TestR"
+liblocation = "/home/au591455/Rstuff/library"
+#liblocation = NULL
 library("spatstat.data",lib.loc=liblocation )
 library("spatstat.geom",lib.loc=liblocation )
 library("spatstat.random",lib.loc=liblocation )
@@ -13,11 +13,7 @@ library("tictoc",lib.loc=liblocation )
 library("foreach",lib.loc=liblocation )
 library("doParallel",lib.loc=liblocation )
 library(utils)
-library(ppMeasures)
-
-library(smacof)
-
-library("ppMeasures",lib.loc=liblocation )
+#library("ppMeasures",lib.loc=liblocation )
 
 registerDoParallel(3)
 mm=10
@@ -27,7 +23,7 @@ squares = list(c(3,1),c(2,2),c(3,2),c(4,2),c(3,3),c(3,4))
 setwd("/home/au591455/Rstuff/Results") 
 #setwd("C:/Users/simon/Desktop/TestR")
 powertest_OF_sq = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,method=1,Kinterval = c(10:15)){
-if(DataSize < Kinterval[length(Kinterval)] ){
+  if(DataSize < Kinterval[length(Kinterval)] ){
   Kinterval = Kinterval[Kinterval< DataSize]
   print("Kinterval values cannot be bigger then the amount of point patterns")
 }
@@ -44,7 +40,11 @@ if(DataSize < Kinterval[length(Kinterval)] ){
     DS1 = DataSize
     DS2 = DS1 -1 
     
-    
+    # stDistPP = function(X,Y,...){
+    #    p1 = cbind(X$x,X$y)
+    #    p2 = cbind(Y$x,Y$y)
+    #    return(stDist(p1, p2,alg="IMA", ...))
+    #  }
     studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000){
       ##### preparations ----------------
       if (is.null(foos1) |  is.null(foos2) ){
@@ -158,62 +158,39 @@ if(DataSize < Kinterval[length(Kinterval)] ){
       return(ptt)
     }
     
-    OutlierPPP_Permu = function(Outlier,PPP,nx,ny=nx,minpoints=20,use.tbar=1,nperm=1,rinterval=NULL,sumfunc=Kest,...){
-      grid1 = quadrats(Outlier,nx=nx,ny=ny)
-      splitOutlier = split(Outlier,f=grid1)
-      OutlierStat = NULL
+    OutlierPPP_Permu =function(PPP1,PPP2,nx,ny=nx,minpoints=20,use.tbar=FALSE,rinterval,nperm=1,sumfunc=Kest,...){
+      
+      grid1 = quadrats(PPP1,nx=nx,ny=ny)
+      splitPPP1 = split(PPP1,f=grid1)
+      ResultPPP1 = NULL
       for(i in c(1:(nx*ny))){
-        if(splitOutlier[[i]]$n >= minpoints){
-          if (is.null(OutlierStat)){
-            TEMPF =  sumfunc(splitOutlier[[i]],r=rinterval)
-            if (is.null(rinterval)){
-              rinterval = TEMPF$r
-            }
-            OutlierStat = matrix(TEMPF$iso , byrow = F, ncol = 1,nrow = length(TEMPF$iso))
+        if(splitPPP1[[i]]$n >= minpoints){
+          if (is.null(ResultPPP1 )){
+            TEMPF =  sumfunc(splitPPP1[[i]],r=rinterval)
+            ResultPPP1 = matrix(TEMPF$iso , byrow = F, ncol = 1,nrow = length(TEMPF$iso))
           } else{
-            OutlierStat = cbind(OutlierStat,sumfunc(splitOutlier[[i]],r=rinterval)$iso )
+            ResultPPP1 = cbind(ResultPPP1 ,sumfunc(splitPPP1[[i]],r=rinterval)$iso )
           }
         }
       }
-      n = length(PPP)
-      PPPStat = NULL
-      if (is.ppplist(PPP)){
-        splitPP = list()
-        for (i in c(1:n)){
-          grid2 = quadrats(PPP[[i]],nx=nx,ny=ny)
-          splitPP = append(splitPP,split(PPP[[i]],f=grid2))
-          for(j in c(1:(nx*ny))){
-            if(splitPP[[i]]$n >= minpoints){
-              if (is.null( PPPStat)){
-                PPPStat = matrix(sumfunc(splitPP [[i]],r=rinterval)$iso , byrow = F, ncol = 1,nrow = length(sumfunc(splitPP[[i]],r=rinterval)$iso))
-              } else{
-                PPPStat = cbind(PPPStat,sumfunc(splitPP [[i]],r=rinterval)$iso )
-              }
-            }
+      grid2 = quadrats(PPP2,nx=nx,ny=ny)
+      splitPPP2 = split(PPP2,f=grid2)
+      ResultPPP2 = NULL
+      for(i in c(1:(nx*ny))){
+        if(splitPPP2[[i]]$n >= minpoints){
+          if (is.null(ResultPPP2)){
+            TEMPF =  sumfunc(splitPPP2[[i]],r=rinterval)
+            ResultPPP2 = matrix(TEMPF$iso , byrow = F, ncol = 1,nrow = length(TEMPF$iso))
+          } else{
+            ResultPPP2 = cbind(ResultPPP2,sumfunc(splitPPP2[[i]],r=rinterval)$iso )
           }
         }
-      } else{
-        grid1 = quadrats(PPP,nx=nx,ny=ny)
-        splitPPP = split(PPP,f=grid1)
-        for(i in c(1:(nx*ny))){
-          if(splitPPP[[i]]$n >= minpoints){
-            if (is.null(PPPStat)){
-              TEMPF =  sumfunc(splitPPP[[i]],r=rinterval)
-              PPPStat= matrix(TEMPF$iso , byrow = F, ncol = 1,nrow = length(TEMPF$iso))
-            } else{
-              PPPStat = cbind(PPPStat,sumfunc(splitPPP[[i]],r=rinterval)$iso )
-            }
-          }
-        }
-        
-        
       }
       
-      
-      
-      return(studpermut.test.Ute(foos1 = OutlierStat,foos2= PPPStat,use.tbar=use.tbar,nperm=nperm))
+      return(studpermut.test.Ute(foos1 = ResultPPP1,foos2= ResultPPP2,use.tbar=use.tbar,nperm=nperm))
     }
-    
+      
+   
     nearest_pointdist = function(X,Y){
       LX = coords(X)
       LY = coords(Y)
@@ -231,7 +208,7 @@ if(DataSize < Kinterval[length(Kinterval)] ){
       return(nearest_pointdist(X,Y)+nearest_pointdist(Y,X))
     }
     
-    distMppp = function(X,nx=3,ny=nx,method=1,minpoints=20,sumfunc=Kest){
+    distMppp = function(X,nx=3,ny=nx,method=1,minpoints=5,sumfunc=Kest){
       
       n = length(X)
       M = matrix(0,n,n)
@@ -239,11 +216,13 @@ if(DataSize < Kinterval[length(Kinterval)] ){
       for (i in c(1:n)){
         for (j in c(q:n)){
           if (method==1 ){
-            tempstore = OutlierPPP_Permu(X[[i]],X[[j]],nx=nx,ny=ny,minpoints=minpoints,use.tbar=1,sumfunc=sumfunc,nperm=1)
+            tempstore = OutlierPPP_Permu(X[[i]],X[[j]],nx=nx,ny=ny,minpoints=minpoints,use.tbar=1,sumfunc=sumfunc,nperm=1,rinterval = seq(0,0.125,length.out = 30))
             M[i,j]=tempstore$statistic
           } else if (method==2){
             M[i,j]=nearest_point_metric(X[[i]],X[[j]])
-          } 
+          } else if (method==3){
+            M[i,j]=nearest_point_metric(X[[i]],X[[j]])
+          }
           
           M[j,i]=M[i,j]
         }
@@ -282,6 +261,9 @@ if(DataSize < Kinterval[length(Kinterval)] ){
     
     outlier_factors_PP = function(X,k,nx,ny=ny,method=1,minpoints=20){
       M = distMppp(X,nx=nx,ny=ny,method=method,minpoints=minpoints)
+      if (sum(is.nan(M))>0){
+        return(NaN)
+      }
       n = length(X)
       m = length(k)
       Result = matrix(0,nrow = n,ncol = m)
@@ -305,23 +287,21 @@ if(DataSize < Kinterval[length(Kinterval)] ){
       Result = apply(Result,1,max)
       return(mean(Result[n+1] <= Result))
     }
-    
-    
-    
+
     ResultpowerM1temp1 <- foreach (i= c(1:m), .combine="cbind", .packages = c("spatstat")) %:%
       foreach (j= c(1:length(squares)), .combine="c", .packages = c("spatstat")) %dopar% {
-        Test_outlier_OF(Outlier = Outlier[[i]], PPP = Data[c((i*DS1-DS2):(i*DS2))],method = method, nx=squares[[j]][1],ny=squares[[j]][2],minpoints = 4,Kinterval=Kinterval)
+        Test_outlier_OF(Outlier = Outlier[[i]], PPP = Data[c((i*DS1-DS2):(i*DS1))],method = method, nx=squares[[j]][1],ny=squares[[j]][2],minpoints = 5,Kinterval=Kinterval)
         }
     
     ResultpowerM1 = ResultpowerM1temp1
     for (q in c(2:(n/m))){
-      setwd("/home/au591455/Rstuff/Results") 
-      #setwd("C:/Users/simon/Desktop/TestR") 
+      #setwd("/home/au591455/Rstuff/Results") 
+      setwd("C:/Users/simon/Desktop/TestR") 
       tempC = readLines(path_of_log)
       writeLines(c(tempC,paste(name,"beginning the ",q," part ", Sys.time())),path_of_log)
       ResultpowerM1temp1 <- foreach (i= c((q*m-(m-1)):(q*m)), .combine="cbind", .packages = c("spatstat")) %:%
         foreach (j= c(1:length(squares)), .combine="c", .packages = c("spatstat")) %dopar% {
-          Test_outlier_OF(Outlier = Outlier[[i]], PPP = Data[c((i*DS1-DS2):(i*DS1))],method = method, nx=squares[[j]][1],ny=squares[[j]][2],minpoints = 4,Kinterval=Kinterval)
+          Test_outlier_OF(Outlier = Outlier[[i]], PPP = Data[c((i*DS1-DS2):(i*DS1))],method = method, nx=squares[[j]][1],ny=squares[[j]][2],minpoints = 5,Kinterval=Kinterval)
         }
       ResultpowerM1  = cbind(ResultpowerM1,ResultpowerM1temp1)
       saveRDS(ResultpowerM1,file = name)
@@ -333,26 +313,25 @@ if(DataSize < Kinterval[length(Kinterval)] ){
   }
 
 Data =  readRDS(file = "DataPPP.Rdata")
-#Data1 = Data[1:120]
+
 
 Matern4a = readRDS(file = "Matern_a.Rdata")
-#Matern4a1 = Matern4a[1:6]
-powertest_OF_sq(Outlier = Matern4a,Data=Data,name ="Power_MaternA_OFM1sq.Rdata",method = 2,m=mm,squares = squares,DataSize=20,newlog=T)
+powertest_OF_sq(Outlier = Matern4a,Data=Data,name ="Power_MaternA_OFsq.Rdata",n=1000,method = 1,m=mm,squares = squares,DataSize=20,newlog=T)
 
 Matern4b = readRDS(file = "Matern_b.Rdata")
-powertest_OF_sq(Outlier = Matern4b,Data=Data,name ="Power_MaternB_OFM1sq.Rdata",method = 2,m=mm,squares = squares,DataSize=20)
+powertest_OF_sq(Outlier = Matern4b,Data=Data,name ="Power_MaternB_OFsq.Rdata",n=1000,method = 1,m=mm,squares = squares,DataSize=20)
 
 Clust4a = readRDS(file = "Clust_a.Rdata")
-powertest_OF_sq(Outlier = Clust4a ,Data=Data,name ="Power_ClusterA_OFM1sq.Rdata",method = 2,m=mm,squares = squares,DataSize=20 )
+powertest_OF_sq(Outlier = Clust4a ,Data=Data,name ="Power_ClusterA_OFsq.Rdata",n=1000,method = 1,m=mm,squares = squares,DataSize=20 )
 
 Clust4b = readRDS(file = "Clust_b.Rdata")
-powertest_OF_sq(Outlier = Clust4b ,Data=Data,name ="Power_ClusterB_OFM1sq.Rdata",method = 2,m=mm,squares = squares,DataSize=20)
+powertest_OF_sq(Outlier = Clust4b ,Data=Data,name ="Power_ClusterB_OFsq.Rdata",n=1000,method = 1,m=mm,squares = squares,DataSize=20)
 
 Clust4c = readRDS(file = "Clust_c.Rdata")
-powertest_OF_sq(Outlier = Clust4c ,Data=Data,name ="Power_ClusterC_OFM1sq.Rdata",method = 2,m=mm,squares = squares,DataSize=20 )
+powertest_OF_sq(Outlier = Clust4c ,Data=Data,name ="Power_ClusterC_OFsq.Rdata",n=1000,method = 1,m=mm,squares = squares,DataSize=20 )
 
 
 poistest  = readRDS(file = "poisPPP.Rdata")
-powertest_OF_sq(Outlier = poistest ,Data=Data,name ="pois_OFM1sq.Rdata",method = 2,m=mm,squares = squares,DataSize=20 )
+powertest_OF_sq(Outlier = poistest ,Data=Data,name ="pois_OFsq.Rdata",n=1000,method = 1,m=mm,squares = squares,DataSize=20 )
 
 stopImplicitCluster()

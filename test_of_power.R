@@ -368,11 +368,3 @@ plot_of_power(Data=power_pois_sunfunc_sq,title = "Pois",Size = dim(power_pois_su
 
 par(mfrow = c(1,1))
 
-sum(is.nan(result_Mata_sumfunc_sq) == T)
-sum(is.nan(result_Matb_sumfunc_sq) == T)
-
-sum(is.nan(result_clustA_sumfunc_sq) == T)
-sum(is.nan(result_clustB_sumfunc_sq) == T)
-sum(is.nan(result_clustC_sumfunc_sq) == T)
-
-sum(is.nan(result_pois_sumfunc_sq) == T)

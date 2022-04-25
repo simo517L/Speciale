@@ -243,16 +243,6 @@ poistest  = readRDS(file = "poisPPP.Rdata")
 
 poweroftest(Outlier = poistest[1:1000] ,Data=Data,name ="PowerpoisTest.Rdata",m=mm,squares = squares,minpoints =5 )
 
-#poistestP1  = readRDS(file = "PowerpoisTest.Rdata")
-#is.na(colSums(poistestP1))
-#sum(is.na(colSums(poistestP1)))
-#poistestP1 = poistestP1[,!is.na(colSums(poistestP1))]
-#rowMeans(poistestP1< 0.05)
-
-
-#poweroftest(Outlier = rpoispp(250,nsim=40),Data=rpoispp(250,nsim=40*20),name ="PowerpoisTest6.Rdata",m=5,squares = squares[1:5],minpoints = 20 )
-#poistestP6  = readRDS(file = "PowerpoisTest6.Rdata")
-#rowMeans(poistestP6< 0.05)
 
 
 stopImplicitCluster()

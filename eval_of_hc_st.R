@@ -1,6 +1,6 @@
 # We start by loading the packages we need
-liblocation = "/home/au591455/Rstuff/library"
-#liblocation = "C:/Users/simon/Desktop/TestR"
+#liblocation = "/home/au591455/Rstuff/library"
+liblocation = "C:/Users/simon/Desktop/TestR"
 #liblocation = NULL
 library("spatstat.data",lib.loc=liblocation )
 library("spatstat.geom",lib.loc=liblocation )
@@ -17,7 +17,7 @@ library("doParallel",lib.loc=liblocation )
 library("cluster",lib.loc=liblocation)
 library(utils)
 
-#library("ppMeasures",lib.loc=liblocation)
+library("ppMeasures",lib.loc=liblocation)
 
 library("foreign",lib.loc=liblocation)
 library("maps",lib.loc=liblocation)
@@ -26,11 +26,11 @@ library("sp",lib.loc=liblocation)
 library("fossil",lib.loc=liblocation)
 
 # we define the function, there will be needed
-#stDistPP = function(X,Y,...){
-#  p1 = cbind(X$x,X$y)
-#  p2 = cbind(Y$x,Y$y)
-#  return(stDist(p1, p2,alg="IMA", ...))
-#}
+stDistPP = function(X,Y,...){
+  p1 = cbind(X$x,X$y)
+  p2 = cbind(Y$x,Y$y)
+  return(stDist(p1, p2,alg="IMA", ...))
+}
 
 studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000){
   ##### preparations ----------------
@@ -152,30 +152,30 @@ Permu_dist = function(PPP1,PPP2,nx,ny=nx,minpoints=20,use.tbar=FALSE,rinterval,n
   
   grid1 = quadrats(PPP1,nx=nx,ny=ny)
   splitPPP1 = split(PPP1,f=grid1)
- ResultPPP1 = NULL
+  ResultPPP1 = NULL
   for(i in c(1:(nx*ny))){
     if(splitPPP1[[i]]$n >= minpoints){
       if (is.null(ResultPPP1 )){
         TEMPF =  sumfunc(splitPPP1[[i]],r=rinterval)
-       ResultPPP1 = matrix(TEMPF$iso , byrow = F, ncol = 1,nrow = length(TEMPF$iso))
+        ResultPPP1 = matrix(TEMPF$iso , byrow = F, ncol = 1,nrow = length(TEMPF$iso))
       } else{
-       ResultPPP1 = cbind(ResultPPP1 ,sumfunc(splitPPP1[[i]],r=rinterval)$iso )
+        ResultPPP1 = cbind(ResultPPP1 ,sumfunc(splitPPP1[[i]],r=rinterval)$iso )
       }
     }
   }
- grid2 = quadrats(PPP2,nx=nx,ny=ny)
- splitPPP2 = split(PPP2,f=grid2)
- ResultPPP2 = NULL
- for(i in c(1:(nx*ny))){
-   if(splitPPP2[[i]]$n >= minpoints){
-     if (is.null(ResultPPP2)){
-       TEMPF =  sumfunc(splitPPP2[[i]],r=rinterval)
-       ResultPPP2 = matrix(TEMPF$iso , byrow = F, ncol = 1,nrow = length(TEMPF$iso))
-     } else{
-       ResultPPP2 = cbind(ResultPPP2,sumfunc(splitPPP2[[i]],r=rinterval)$iso )
-     }
-   }
- }
+  grid2 = quadrats(PPP2,nx=nx,ny=ny)
+  splitPPP2 = split(PPP2,f=grid2)
+  ResultPPP2 = NULL
+  for(i in c(1:(nx*ny))){
+    if(splitPPP2[[i]]$n >= minpoints){
+      if (is.null(ResultPPP2)){
+        TEMPF =  sumfunc(splitPPP2[[i]],r=rinterval)
+        ResultPPP2 = matrix(TEMPF$iso , byrow = F, ncol = 1,nrow = length(TEMPF$iso))
+      } else{
+        ResultPPP2 = cbind(ResultPPP2,sumfunc(splitPPP2[[i]],r=rinterval)$iso )
+      }
+    }
+  }
   
   return(studpermut.test.Ute(foos1 = ResultPPP1,foos2= ResultPPP2,use.tbar=use.tbar,nperm=nperm))
 }
@@ -197,7 +197,7 @@ nearest_point_metric = function(X,Y){
   return(nearest_pointdist(X,Y)+nearest_pointdist(Y,X))
 }
 
-distMppp = function(X,nx=3,ny=nx,method=1,minpoints=20,sumfunc=Kest,rinterval=seq(0,0.125,length.out = 30),...){
+distMppp = function(X,nx=4,ny=nx,method=1,minpoints=20,sumfunc=Kest,rinterval=seq(0,0.125,length.out = 30),...){
   
   n = length(X)
   M = matrix(0,n,n)
@@ -209,9 +209,9 @@ distMppp = function(X,nx=3,ny=nx,method=1,minpoints=20,sumfunc=Kest,rinterval=se
         M[i,j]=tempstore$statistic
       } else if (method==2){
         M[i,j]=nearest_point_metric(X[[i]],X[[j]],...)
-      } #else if (method==3){
-      # M[i,j]=stDistPP(X[[i]],X[[j]],...)
-      #}
+      } else if (method==3){
+       M[i,j]=stDistPP(X[[i]],X[[j]],...)
+      }
       
       M[j,i]=M[i,j]
     }
@@ -248,14 +248,6 @@ conf_matrix = function(vec1,vec2){
 }
 
 eval_clust = function(distmatrix,k,true_label,methodhc="average"){
-  if(sum(is.nan(distmatrix))>0){
-    while (sum(is.nan(distmatrix))>0) {
-      nan_index = which.max(colSums(is.nan(distmatrix)))
-      true_label = true_label[-nan_index]
-      distmatrix = distmatrix[-nan_index,-nan_index]
-    }
-  }
-  
   n=length(methodhc)
   if (n==1){
     hc = agnes(distmatrix,method = methodhc)
@@ -297,34 +289,14 @@ Clust4b = readRDS(file = "Clust_b.Rdata")
 Clust4c = readRDS(file = "Clust_c.Rdata")
 poistest  = readRDS(file = "poisPPP.Rdata")
 
-LL = c(Data[1:3],Matern4a[1:3],Matern4b[1:3],Clust4a[1:3],Clust4c[1:3] ,Clust4b[1:3])
-n = length(LL)
-
-par(mfrow = c(3,6),mar = c(0.1,0.1, 1, 0.1))
-plot(Data[[1]],main = "Pois")
-plot(Matern4a[[1]],main = "Matern: r=0.05")
-plot(Matern4b[[1]],main = "Matern: r=0.02")
-plot(Clust4a[[1]],main = "Clust: scale=0.1,mu=1")
-plot(Clust4b[[1]],main = "Clust: scale=0.1,mu=4")
-plot(Clust4c[[1]],main = "Clust: scale=0.5,mu=4")
-plot(Data[[2]],main = "")
-plot(Matern4a[[2]],main = "")
-plot(Matern4b[[2]],main = "")
-plot(Clust4a[[2]],main = "")
-plot(Clust4b[[2]],main = "")
-plot(Clust4c[[2]],main = "")
-plot(Data[[3]],main = "")
-plot(Matern4a[[3]],main = "")
-plot(Matern4b[[3]],main = "")
-plot(Clust4a[[3]],main = "")
-plot(Clust4b[[3]],main = "")
-plot(Clust4c[[3]],main = "")
-par(mfrow = c(1,1))
 
 
-name1 ="eval1T9.Rdata"
-name2 ="eval2T9.Rdata"
-name3 ="eval3T9.Rdata"
+
+
+
+name1 ="eval1st.Rdata"
+name2 ="eval2st.Rdata"
+name3 ="eval3st.Rdata"
 registerDoParallel(3)
 rinterval = seq(0,0.125,length.out = 30)
 m=1000
@@ -337,7 +309,7 @@ TrueLabel = c(rep(1,5),rep(2,5),rep(3,5))
 print("Start UP")
 hceval1 <- foreach (i= c(1:10), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
   vec = c((i*5-4):(i*5))
-  MM  = distMppp(c(Data[vec],Matern4b[vec],Clust4a[vec]),method=1,nx=3,ny=3,minpoints=5)
+  MM  = distMppp(c(Data[vec],Matern4b[vec],Clust4a[vec]),method=3,pm=1,minpoints=5)
   eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
 }
 saveRDS(hceval1,file = name1)
@@ -347,7 +319,7 @@ for(j in c(2:50)){
   #setwd("C:/Users/simon/Desktop/TestR") 
   hceval1temp <- foreach (i= c(intval[j]:(intval[j+1]-1)), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
     vec = c((i*5-4):(i*5))
-    MM  = distMppp(c(Data[vec],Matern4b[vec],Clust4a[vec]),method=1,nx=3,ny=3,minpoints=5)
+    MM  = distMppp(c(Data[vec],Matern4b[vec],Clust4a[vec]),method=3,pm=1,minpoints=5)
     eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
   }
   hceval1  =cbind(hceval1,hceval1temp)
@@ -361,7 +333,7 @@ close(path_of_log)
 path_of_log<-file(logpath)
 hceval2 <- foreach (i= c(1:10), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
   vec = c((i*5-4):(i*5))
-  MM  = distMppp(c(Data[vec],Matern4a[vec],Clust4c[vec]),method=1,nx=3,ny=3,minpoints=5)
+  MM  = distMppp(c(Data[vec],Matern4a[vec],Clust4c[vec]),method=3,pm=1,minpoints=5)
   eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
 }
 saveRDS(hceval2,file = name2)
@@ -371,7 +343,7 @@ for(j in c(2:50)){
   #setwd("C:/Users/simon/Desktop/TestR") 
   hceval2temp <- foreach (i= c(intval[j]:(intval[j+1]-1)), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
     vec = c((i*5-4):(i*5))
-    MM  = distMppp(c(Data[vec],Matern4a[vec],Clust4c[vec]),method=1,nx=3,ny=3,minpoints=5)
+    MM  = distMppp(c(Data[vec],Matern4a[vec],Clust4c[vec]),method=3,pm=1,minpoints=5)
     eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
   }
   hceval2  =cbind(hceval2,hceval2temp)
@@ -385,7 +357,7 @@ path_of_log<-file(logpath)
 TrueLabel = c(1,1,1,2,2,2,3,3,3,4,4,4,5,5,5,6,6,6)
 hceval3 <- foreach (i= c(1:10), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
   vec = c((i*3-2):(i*3))
-  MM  = distMppp(c(Data[vec],Matern4a[vec],Matern4b[vec],Clust4a[vec],Clust4b[vec],Clust4c[vec]),method=1,nx=3,ny=3,minpoints=5)
+  MM  = distMppp(c(Data[vec],Matern4a[vec],Matern4b[vec],Clust4a[vec],Clust4b[vec],Clust4c[vec]),method=3,pm=1,minpoints=5)
   eval_clust(MM,k=6,true_label =TrueLabel,methodhc = c("single","average","complete" ))
 }
 saveRDS(hceval3,file = name3)
@@ -394,7 +366,7 @@ for(j in c(2:50)){
   #setwd("C:/Users/simon/Desktop/TestR") 
   hceval3temp <- foreach (i= c(intval[j]:(intval[j+1]-1)), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
     vec = c((i*3-2):(i*3))
-    MM  = distMppp(c(Data[vec],Matern4a[vec],Matern4b[vec],Clust4a[vec],Clust4b[vec],Clust4c[vec]),method=1,nx=3,ny=3,minpoints=5)
+    MM  = distMppp(c(Data[vec],Matern4a[vec],Matern4b[vec],Clust4a[vec],Clust4b[vec],Clust4c[vec]),method=3,pm=1,minpoints=5)
     eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
   }
   hceval3  =cbind(hceval3,hceval3temp)
@@ -403,10 +375,5 @@ for(j in c(2:50)){
   procent = j/50
   writeLines(c(tempC,paste(name3,":",procent," % done", Sys.time())),path_of_log)
 }
-
-
 close(path_of_log)
 stopImplicitCluster()
-
-
-

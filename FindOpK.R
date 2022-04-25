@@ -203,6 +203,11 @@ loc2 <- cmdscale(Mnn)
 x2 <- loc2[, 1]
 y2 <- loc2[, 2] 
 
+MT = distMppp(Data[1:100],method = 1,s)
+loc3 <- cmdscale(MT)
+x3 <- loc2[, 1]
+y3 <- loc2[, 2] 
+
 marks2 = OF_nn[,25]
 marks2[marks2<1] = 1
 ppnn = ppp(x=x2,y=y2,marks = log(marks2),window = owin(range(x2),range(y2)))
