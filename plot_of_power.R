@@ -27,26 +27,47 @@ conf_of_power=function(M,n){
 }
 
 
-plot_of_power = function(Data,Size,X,conf = FALSE,title="",legendC = FALSE,legendNames=NULL){
+plot_of_power = function(Data,Size,X,conf = FALSE,title="",legendC = FALSE,legendNames=NULL,yval=NULL){
+  if (!is.null(yval)){
+    a=yval[1]
+    b=yval[2]
+  }
   if ( is.list(Data) & length(Data) > 1){
     n = length(Data)
-    Results = list()
+    Rtemp=c(1:n)
+    Rlow=c(1:n)
+    Rup=c(1:n)
     for (i in c(1:n)){
-      Results[[i]] = conf_of_power(Data[[i]],Size)
+      Results = conf_of_power(Data[[i]],Size)
+      Rtemp[i] = Results$p_value
+      Rlow[i] = Results$lower_lim
+      Rup[i] = Results$upper_lim
     }
     if (conf == FALSE){
-      plot(X,Results[[1]]$p_value,type="l",lty=1,col=1,ylim = c(0,1),ylab = "Rate of rejection",main = title)
+      
+      if (is.null(yval)){
+        a = min(Rtemp) -0.05
+        b = max(Rtemp) +0.05
+      }
+      
+      plot(X,Rtemp[1],type="p",lty=1,col=1,ylim = c(a,b),ylab = "Rate of rejection",main = title)
       for ( j in c(2:n)){
-        lines(X,Results[[j]]$p_value,lty=j,col=j)
+        points(X,Rtemp[j],lty=j,col=j)
       }
     }     else{
-      plot(X,Results[[1]]$p_value,type="l",lty=1,col=1,ylim = c(0,1),ylab = "Rate of rejection",main = title)
-      lines(X,Results[[1]]$upper_lim,lty=2,col=1)
-      lines(X,Results[[1]]$lower_lim,lty=2,col=1)
+      if (is.null(yval)){
+        a = min(Rlow) -0.05
+        b = max(Rup) +0.05
+      }
+      plot(X,Rtemp[1],type="p",lty=1,col=1,ylim = c(a,b),ylab = "Rate of rejection",main = title)
+      arrows(X, Rlow[1],X, Rup[1], length=0.01, angle=90, code=3) 
+      #points(X,Rup[1],lty=2,col=1)
+      #points(X,Rlow[1],lty=2,col=1)
       for ( j in c(2:n)){
-        lines(X,Results[[j]]$p_value,lty=1,col=j)
-        lines(X,Results[[j]]$upper_lim,lty=2,col=j)
-        lines(X,Results[[j]]$lower_lim,lty=2,col=j)
+        points(X,Rtemp[j],lty=1,col=j)
+        arrows(X, Rlow[j],X, Rup[j], length=0.01, angle=90, code=3)
+        #points(X,Rup[j],lty=2,col=j)
+        #points(X,Rlow[j],lty=2,col=j)
       }
       
     }} else if ( is.matrix(Data) & length(Data) > 1) {
@@ -54,20 +75,40 @@ plot_of_power = function(Data,Size,X,conf = FALSE,title="",legendC = FALSE,legen
       Results = conf_of_power(Data,Size)
       
       if (conf == FALSE){
-        plot(X,Results$p_value,type="l",lty=1,col=1,ylim = c(0,1),ylab = "Rate of rejection",main = title)
+        if (is.null(yval)){
+          a = min(Results$p_value) -0.1
+          b = max(Results$p_value) +0.1
+        }
+        plot(X,Results$p_value,type="p",lty=1,col=1,ylim = c(a,b),ylab = "Rate of rejection",main = title)
         
       }     else{
-        plot(X,Results$p_value,type="l",lty=1,col=1,ylim = c(0,1),ylab = "Rate of rejection",main = title)
-        lines(X,Results$upper_lim,lty=2,col=1)
-        lines(X,Results$lower_lim,lty=2,col=1)
+        if (is.null(yval)){
+          a = min(Results$lower_lim) -0.1
+          b = max(Results$upper_lim) +0.1
+        }
+        plot(X,Results$p_value,type="p",lty=1,col=1,ylim = c(a,b),ylab = "Rate of rejection",main = title)
+        arrows(X, Results$lower_lim,X, Results$upper_lim, length=0.01, angle=90, code=3)
+        #points(X,Results$upper_lim,lty=2,col=1)
+        #points(X,Results$lower_lim,lty=2,col=1)
         
       }} else {
         n=1
         Results = conf_of_power(Data,Size)
-        if (conf == FALSE){plot(X,Results$p_value,type="l",lty=1,col=1,ylim = c(0,1),ylab = "Rate of rejection",main = title)}
-        else {plot(X,Results$p_value,type="l",lty=1,col=1,ylim = c(0,1),ylab = "Rate of rejection",main = title)
-          lines(X,Results$upper_lim,lty=2,col=1)
-          lines(X,Results$lower_lim,lty=2,col=1)
+        if (conf == FALSE){
+          if (is.null(yval)){
+            a = min(Results$p_value) -0.1
+            b = max(Results$p_value) +0.1
+          }
+          plot(X,Results$p_value,type="p",lty=1,col=1,ylim = c(a,b),ylab = "Rate of rejection",main = title)}
+        else {
+          if (is.null(yval)){
+            a = min(Results$lower_lim) -0.1
+            b = max(Results$upper_lim) +0.1
+          }
+          plot(X,Results$p_value,type="l",lty=1,col=1,ylim = c(a,b),ylab = "Rate of rejection",main = title)
+          arrows(X, Results$lower_lim,X, Results$upper_lim, length=0.01, angle=90, code=3)
+          #points(X,Results$upper_lim,lty=2,col=1)
+          #points(X,Results$lower_lim,lty=2,col=1)
         }
       }
   if (legendC & n>1){
@@ -108,42 +149,42 @@ test_of_power = function(X, Outlier,Data,testrange=0.3,method){
 setwd("C:/Users/simon/Desktop/TestR")
 result_Mata_sumfunc_sq = readRDS(file = "PowerMaternA.Rdata")
 
-number_of_squares = c(3,4,6,8,9,12) 
+number_of_squares = c(4,6,9,12) 
 par(mfrow = c(3,2))
 sum(is.nan(colMeans(result_Mata_sumfunc_sq)))
 
-result_Mata_sumfunc_sq = result_Mata_sumfunc_sq[,!is.nan(colMeans(result_Mata_sumfunc_sq))]
+#result_Mata_sumfunc_sq = result_Mata_sumfunc_sq[,!is.nan(colMeans(result_Mata_sumfunc_sq))]
 sum(is.nan(colMeans(result_Mata_sumfunc_sq)))
 
 power_Mata_sunfunc_sq = result_Mata_sumfunc_sq <=  0.05
 sum(is.nan(colMeans(result_Mata_sumfunc_sq)) == T)
-plot_of_power(Data=power_Mata_sunfunc_sq,title = "Matern: r=0.05",Size = dim(power_Mata_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = T)
+plot_of_power(Data=power_Mata_sunfunc_sq,yval=c(0,1),title = "Matern: r=0.05",Size = dim(power_Mata_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = F)
 
 result_Matb_sumfunc_sq = readRDS(file = "PowerMaternB.Rdata")
 power_Matb_sunfunc_sq = result_Matb_sumfunc_sq[,is.nan(colMeans(result_Matb_sumfunc_sq)) != T] <=  0.05
 sum(is.nan(colMeans(result_Matb_sumfunc_sq)) == T)
-plot_of_power(Data=power_Matb_sunfunc_sq,title = "Matern: r=0.02",Size = dim(power_Matb_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = T)
+plot_of_power(Data=power_Matb_sunfunc_sq,yval=c(0,1),title = "Matern: r=0.02",Size = dim(power_Matb_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = F)
 
 result_clustA_sumfunc_sq = readRDS(file = "PowerClusterA.Rdata")
 power_clustA_sunfunc_sq = result_clustA_sumfunc_sq[,is.nan(colMeans(result_clustA_sumfunc_sq)) != T] <=  0.05
 sum(is.nan(colMeans(result_clustA_sumfunc_sq)) == T)
-plot_of_power(Data=power_clustA_sunfunc_sq,title = "Clust: scale=0.1,mu=1",Size = dim(power_clustA_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = T)
+plot_of_power(Data=power_clustA_sunfunc_sq,yval=c(0,1),title = "Clust: scale=0.1,mu=1",Size = dim(power_clustA_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = F)
 
 result_clustB_sumfunc_sq = readRDS(file = "PowerClusterB.Rdata")
 power_clustB_sunfunc_sq = result_clustB_sumfunc_sq[,is.nan(colMeans(result_clustB_sumfunc_sq)) != T] <=  0.05
 sum(is.nan(colMeans(result_clustB_sumfunc_sq)) == T)
-plot_of_power(Data=power_clustB_sunfunc_sq,title = "Clust: scale=0.1,mu=4",Size = dim(power_clustB_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = T)
+plot_of_power(Data=power_clustB_sunfunc_sq,yval=c(0,1),title = "Clust: scale=0.1,mu=4",Size = dim(power_clustB_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = F)
 
 
 result_clustC_sumfunc_sq = readRDS(file = "PowerClusterC.Rdata")
 power_clustC_sunfunc_sq = result_clustC_sumfunc_sq[,is.nan(colMeans(result_clustC_sumfunc_sq)) != T] <=  0.05
 
-plot_of_power(Data=power_clustC_sunfunc_sq,title = "Clust: scale=0.5,mu=4",Size = dim(power_clustC_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = T)
+plot_of_power(Data=power_clustC_sunfunc_sq,yval=c(0,1),title = "Clust: scale=0.5,mu=4",Size = dim(power_clustC_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = F)
 
 
 result_pois_sumfunc_sq = readRDS(file = "PowerpoisTest.Rdata")
 power_pois_sunfunc_sq = result_pois_sumfunc_sq[,is.nan(colMeans(result_pois_sumfunc_sq)) != T] <=  0.05
-plot_of_power(Data=power_pois_sunfunc_sq,title = "Poison",Size = dim(power_pois_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = T)
+plot_of_power(Data=power_pois_sunfunc_sq,yval=c(0,1),title = "Poison",Size = dim(power_pois_sunfunc_sq)[2],X= number_of_squares,conf = T,legendC = F)
 
 par(mfrow = c(1,1))
 

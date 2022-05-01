@@ -15,8 +15,7 @@ library("doParallel",lib.loc=liblocation )
 
 registerDoParallel(3)
 mm=20
-timeofpowertest  =c(1:6)
-squares = list(c(3,1),c(2,2),c(3,2),c(4,2),c(3,3),c(3,4))
+squares = list(c(2,2),c(3,2),c(3,3),c(3,4))
 setwd("/home/au591455/Rstuff/Results") 
 #setwd("C:/Users/simon/Desktop/TestR") 
 

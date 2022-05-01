@@ -16,7 +16,7 @@ library("doParallel",lib.loc=liblocation )
 library("cluster",lib.loc=liblocation)
 library(utils)
 
-library("ppMeasures",lib.loc=liblocation)
+#library("ppMeasures",lib.loc=liblocation)
 
 library("foreign",lib.loc=liblocation)
 library("maps",lib.loc=liblocation)
@@ -25,11 +25,11 @@ library("sp",lib.loc=liblocation)
 library("fossil",lib.loc=liblocation)
 
 # we define the function, there will be needed
-stDistPP = function(X,Y,...){
-  p1 = cbind(X$x,X$y)
-  p2 = cbind(Y$x,Y$y)
-  return(stDist(p1, p2,alg="IMA", ...))
-}
+#stDistPP = function(X,Y,...){
+#  p1 = cbind(X$x,X$y)
+#  p2 = cbind(Y$x,Y$y)
+#  return(stDist(p1, p2,alg="IMA", ...))
+#}
 
 studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000){
   ##### preparations ----------------

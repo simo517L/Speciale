@@ -297,30 +297,6 @@ Clust4b = readRDS(file = "Clust_b.Rdata")
 Clust4c = readRDS(file = "Clust_c.Rdata")
 poistest  = readRDS(file = "poisPPP.Rdata")
 
-LL = c(Data[1:3],Matern4a[1:3],Matern4b[1:3],Clust4a[1:3],Clust4c[1:3] ,Clust4b[1:3])
-n = length(LL)
-
-par(mfrow = c(3,6),mar = c(0.1,0.1, 1, 0.1))
-plot(Data[[1]],main = "Pois")
-plot(Matern4a[[1]],main = "Matern: r=0.05")
-plot(Matern4b[[1]],main = "Matern: r=0.02")
-plot(Clust4a[[1]],main = "Clust: scale=0.1,mu=1")
-plot(Clust4b[[1]],main = "Clust: scale=0.1,mu=4")
-plot(Clust4c[[1]],main = "Clust: scale=0.5,mu=4")
-plot(Data[[2]],main = "")
-plot(Matern4a[[2]],main = "")
-plot(Matern4b[[2]],main = "")
-plot(Clust4a[[2]],main = "")
-plot(Clust4b[[2]],main = "")
-plot(Clust4c[[2]],main = "")
-plot(Data[[3]],main = "")
-plot(Matern4a[[3]],main = "")
-plot(Matern4b[[3]],main = "")
-plot(Clust4a[[3]],main = "")
-plot(Clust4b[[3]],main = "")
-plot(Clust4c[[3]],main = "")
-par(mfrow = c(1,1))
-
 
 name1 ="eval1T9.Rdata"
 name2 ="eval2T9.Rdata"
@@ -331,10 +307,168 @@ m=1000
 intval = seq(1,m,10)
 logpath = "/home/au591455/Rstuff/Results/logHC.txt"
 #logpath = "C:/Users/simon/Desktop/TestR/logHC.txt"
+
+name1 ="eval1T4.Rdata"
+name2 ="eval2T4.Rdata"
+name3 ="eval3T4.Rdata"
 path_of_log<-file(logpath)
 writeLines("Start UP", path_of_log)
 TrueLabel = c(rep(1,5),rep(2,5),rep(3,5))
 print("Start UP")
+hceval1 <- foreach (i= c(1:10), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
+  vec = c((i*5-4):(i*5))
+  MM  = distMppp(c(Data[vec],Matern4b[vec],Clust4a[vec]),method=1,nx=2,ny=2,minpoints=5)
+  eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
+}
+saveRDS(hceval1,file = name1)
+#TTT = readRDS(name1)
+for(j in c(2:50)){
+  setwd("/home/au591455/Rstuff/Results") 
+  #setwd("C:/Users/simon/Desktop/TestR") 
+  hceval1temp <- foreach (i= c(intval[j]:(intval[j+1]-1)), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
+    vec = c((i*5-4):(i*5))
+    MM  = distMppp(c(Data[vec],Matern4b[vec],Clust4a[vec]),method=1,nx=2,ny=2,minpoints=5)
+    eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
+  }
+  hceval1  =cbind(hceval1,hceval1temp)
+  
+  saveRDS(hceval1,file = name1)
+  tempC = readLines(path_of_log)
+  procent = j/50
+  writeLines(c(tempC,paste(name1,":",procent," % done", Sys.time())),path_of_log)
+}
+close(path_of_log)
+path_of_log<-file(logpath)
+hceval2 <- foreach (i= c(1:10), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
+  vec = c((i*5-4):(i*5))
+  MM  = distMppp(c(Data[vec],Matern4a[vec],Clust4c[vec]),method=1,nx=2,ny=2,minpoints=5)
+  eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
+}
+saveRDS(hceval2,file = name2)
+
+for(j in c(2:50)){
+  setwd("/home/au591455/Rstuff/Results") 
+  #setwd("C:/Users/simon/Desktop/TestR") 
+  hceval2temp <- foreach (i= c(intval[j]:(intval[j+1]-1)), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
+    vec = c((i*5-4):(i*5))
+    MM  = distMppp(c(Data[vec],Matern4a[vec],Clust4c[vec]),method=1,nx=2,ny=2,minpoints=5)
+    eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
+  }
+  hceval2  =cbind(hceval2,hceval2temp)
+  saveRDS(hceval2,file = name2)
+  tempC = readLines(path_of_log)
+  procent = j/50
+  writeLines(c(tempC,paste(name2,":",procent," % done", Sys.time())),path_of_log)
+}
+close(path_of_log)
+path_of_log<-file(logpath)
+TrueLabel = c(1,1,1,2,2,2,3,3,3,4,4,4,5,5,5,6,6,6)
+hceval3 <- foreach (i= c(1:10), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
+  vec = c((i*3-2):(i*3))
+  MM  = distMppp(c(Data[vec],Matern4a[vec],Matern4b[vec],Clust4a[vec],Clust4b[vec],Clust4c[vec]),method=1,nx=2,ny=2,minpoints=5)
+  eval_clust(MM,k=6,true_label =TrueLabel,methodhc = c("single","average","complete" ))
+}
+saveRDS(hceval3,file = name3)
+for(j in c(2:50)){
+  setwd("/home/au591455/Rstuff/Results") 
+  #setwd("C:/Users/simon/Desktop/TestR") 
+  hceval3temp <- foreach (i= c(intval[j]:(intval[j+1]-1)), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
+    vec = c((i*3-2):(i*3))
+    MM  = distMppp(c(Data[vec],Matern4a[vec],Matern4b[vec],Clust4a[vec],Clust4b[vec],Clust4c[vec]),method=1,nx=2,ny=2,minpoints=5)
+    eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
+  }
+  hceval3  =cbind(hceval3,hceval3temp)
+  saveRDS(hceval3,file = name3)
+  tempC = readLines(path_of_log)
+  procent = j/50
+  writeLines(c(tempC,paste(name3,":",procent," % done", Sys.time())),path_of_log)
+}
+
+
+close(path_of_log)
+
+name1 ="eval1T6.Rdata"
+name2 ="eval2T6.Rdata"
+name3 ="eval3T6.Rdata"
+path_of_log<-file(logpath)
+TrueLabel = c(rep(1,5),rep(2,5),rep(3,5))
+hceval1 <- foreach (i= c(1:10), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
+  vec = c((i*5-4):(i*5))
+  MM  = distMppp(c(Data[vec],Matern4b[vec],Clust4a[vec]),method=1,nx=3,ny=2,minpoints=5)
+  eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
+}
+saveRDS(hceval1,file = name1)
+#TTT = readRDS(name1)
+for(j in c(2:50)){
+  setwd("/home/au591455/Rstuff/Results") 
+  #setwd("C:/Users/simon/Desktop/TestR") 
+  hceval1temp <- foreach (i= c(intval[j]:(intval[j+1]-1)), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
+    vec = c((i*5-4):(i*5))
+    MM  = distMppp(c(Data[vec],Matern4b[vec],Clust4a[vec]),method=1,nx=3,ny=2,minpoints=5)
+    eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
+  }
+  hceval1  =cbind(hceval1,hceval1temp)
+  
+  saveRDS(hceval1,file = name1)
+  tempC = readLines(path_of_log)
+  procent = j/50
+  writeLines(c(tempC,paste(name1,":",procent," % done", Sys.time())),path_of_log)
+}
+close(path_of_log)
+path_of_log<-file(logpath)
+hceval2 <- foreach (i= c(1:10), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
+  vec = c((i*5-4):(i*5))
+  MM  = distMppp(c(Data[vec],Matern4a[vec],Clust4c[vec]),method=1,nx=3,ny=2,minpoints=5)
+  eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
+}
+saveRDS(hceval2,file = name2)
+
+for(j in c(2:50)){
+  setwd("/home/au591455/Rstuff/Results") 
+  #setwd("C:/Users/simon/Desktop/TestR") 
+  hceval2temp <- foreach (i= c(intval[j]:(intval[j+1]-1)), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
+    vec = c((i*5-4):(i*5))
+    MM  = distMppp(c(Data[vec],Matern4a[vec],Clust4c[vec]),method=1,nx=3,ny=2,minpoints=5)
+    eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
+  }
+  hceval2  =cbind(hceval2,hceval2temp)
+  saveRDS(hceval2,file = name2)
+  tempC = readLines(path_of_log)
+  procent = j/50
+  writeLines(c(tempC,paste(name2,":",procent," % done", Sys.time())),path_of_log)
+}
+close(path_of_log)
+path_of_log<-file(logpath)
+TrueLabel = c(1,1,1,2,2,2,3,3,3,4,4,4,5,5,5,6,6,6)
+hceval3 <- foreach (i= c(1:10), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
+  vec = c((i*3-2):(i*3))
+  MM  = distMppp(c(Data[vec],Matern4a[vec],Matern4b[vec],Clust4a[vec],Clust4b[vec],Clust4c[vec]),method=1,nx=3,ny=2,minpoints=5)
+  eval_clust(MM,k=6,true_label =TrueLabel,methodhc = c("single","average","complete" ))
+}
+saveRDS(hceval3,file = name3)
+for(j in c(2:50)){
+  setwd("/home/au591455/Rstuff/Results") 
+  #setwd("C:/Users/simon/Desktop/TestR") 
+  hceval3temp <- foreach (i= c(intval[j]:(intval[j+1]-1)), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
+    vec = c((i*3-2):(i*3))
+    MM  = distMppp(c(Data[vec],Matern4a[vec],Matern4b[vec],Clust4a[vec],Clust4b[vec],Clust4c[vec]),method=1,nx=3,ny=2,minpoints=5)
+    eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
+  }
+  hceval3  =cbind(hceval3,hceval3temp)
+  saveRDS(hceval3,file = name3)
+  tempC = readLines(path_of_log)
+  procent = j/50
+  writeLines(c(tempC,paste(name3,":",procent," % done", Sys.time())),path_of_log)
+}
+
+
+close(path_of_log)
+
+name1 ="eval1T9.Rdata"
+name2 ="eval2T9.Rdata"
+name3 ="eval3T9.Rdata"
+path_of_log<-file(logpath)
+TrueLabel = c(rep(1,5),rep(2,5),rep(3,5))
 hceval1 <- foreach (i= c(1:10), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
   vec = c((i*5-4):(i*5))
   MM  = distMppp(c(Data[vec],Matern4b[vec],Clust4a[vec]),method=1,nx=3,ny=3,minpoints=5)
@@ -406,6 +540,84 @@ for(j in c(2:50)){
 
 
 close(path_of_log)
+
+name1 ="eval1T12.Rdata"
+name2 ="eval2T12.Rdata"
+name3 ="eval3T12.Rdata"
+path_of_log<-file(logpath)
+TrueLabel = c(rep(1,5),rep(2,5),rep(3,5))
+hceval1 <- foreach (i= c(1:10), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
+  vec = c((i*5-4):(i*5))
+  MM  = distMppp(c(Data[vec],Matern4b[vec],Clust4a[vec]),method=1,nx=3,ny=4,minpoints=5)
+  eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
+}
+saveRDS(hceval1,file = name1)
+#TTT = readRDS(name1)
+for(j in c(2:50)){
+  setwd("/home/au591455/Rstuff/Results") 
+  #setwd("C:/Users/simon/Desktop/TestR") 
+  hceval1temp <- foreach (i= c(intval[j]:(intval[j+1]-1)), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
+    vec = c((i*5-4):(i*5))
+    MM  = distMppp(c(Data[vec],Matern4b[vec],Clust4a[vec]),method=1,nx=3,ny=4,minpoints=5)
+    eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
+  }
+  hceval1  =cbind(hceval1,hceval1temp)
+  
+  saveRDS(hceval1,file = name1)
+  tempC = readLines(path_of_log)
+  procent = j/50
+  writeLines(c(tempC,paste(name1,":",procent," % done", Sys.time())),path_of_log)
+}
+close(path_of_log)
+path_of_log<-file(logpath)
+hceval2 <- foreach (i= c(1:10), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
+  vec = c((i*5-4):(i*5))
+  MM  = distMppp(c(Data[vec],Matern4a[vec],Clust4c[vec]),method=1,nx=3,ny=4,minpoints=5)
+  eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
+}
+saveRDS(hceval2,file = name2)
+
+for(j in c(2:50)){
+  setwd("/home/au591455/Rstuff/Results") 
+  #setwd("C:/Users/simon/Desktop/TestR") 
+  hceval2temp <- foreach (i= c(intval[j]:(intval[j+1]-1)), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
+    vec = c((i*5-4):(i*5))
+    MM  = distMppp(c(Data[vec],Matern4a[vec],Clust4c[vec]),method=1,nx=3,ny=4,minpoints=5)
+    eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
+  }
+  hceval2  =cbind(hceval2,hceval2temp)
+  saveRDS(hceval2,file = name2)
+  tempC = readLines(path_of_log)
+  procent = j/50
+  writeLines(c(tempC,paste(name2,":",procent," % done", Sys.time())),path_of_log)
+}
+close(path_of_log)
+path_of_log<-file(logpath)
+TrueLabel = c(1,1,1,2,2,2,3,3,3,4,4,4,5,5,5,6,6,6)
+hceval3 <- foreach (i= c(1:10), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
+  vec = c((i*3-2):(i*3))
+  MM  = distMppp(c(Data[vec],Matern4a[vec],Matern4b[vec],Clust4a[vec],Clust4b[vec],Clust4c[vec]),method=1,nx=3,ny=4,minpoints=5)
+  eval_clust(MM,k=6,true_label =TrueLabel,methodhc = c("single","average","complete" ))
+}
+saveRDS(hceval3,file = name3)
+for(j in c(2:50)){
+  setwd("/home/au591455/Rstuff/Results") 
+  #setwd("C:/Users/simon/Desktop/TestR") 
+  hceval3temp <- foreach (i= c(intval[j]:(intval[j+1]-1)), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
+    vec = c((i*3-2):(i*3))
+    MM  = distMppp(c(Data[vec],Matern4a[vec],Matern4b[vec],Clust4a[vec],Clust4b[vec],Clust4c[vec]),method=1,nx=3,ny=4,minpoints=5)
+    eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
+  }
+  hceval3  =cbind(hceval3,hceval3temp)
+  saveRDS(hceval3,file = name3)
+  tempC = readLines(path_of_log)
+  procent = j/50
+  writeLines(c(tempC,paste(name3,":",procent," % done", Sys.time())),path_of_log)
+}
+
+
+close(path_of_log)
+
 stopImplicitCluster()
 
 

@@ -15,14 +15,14 @@ library("doParallel",lib.loc=liblocation )
 library(utils)
 #library("ppMeasures",lib.loc=liblocation )
 
-registerDoParallel(3)
+registerDoParallel(4)
 mm=10
-squares = list(c(3,1),c(2,2),c(3,2),c(4,2),c(3,3),c(3,4))
+squares = list(c(2,2),c(3,2),c(3,3),c(3,4))
 
 
 setwd("/home/au591455/Rstuff/Results") 
 #setwd("C:/Users/simon/Desktop/TestR")
-powertest_OF_sq = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,method=1,Kinterval = c(10:15)){
+powertest_OF_sq = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,method=1,Kinterval = c(5:10)){
   if(DataSize < Kinterval[length(Kinterval)] ){
   Kinterval = Kinterval[Kinterval< DataSize]
   print("Kinterval values cannot be bigger then the amount of point patterns")
@@ -220,9 +220,9 @@ powertest_OF_sq = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSiz
             M[i,j]=tempstore$statistic
           } else if (method==2){
             M[i,j]=nearest_point_metric(X[[i]],X[[j]])
-          } else if (method==3){
-            M[i,j]=nearest_point_metric(X[[i]],X[[j]])
-          }
+          } #else if (method==3){
+          #  M[i,j]=nearest_point_metric(X[[i]],X[[j]])
+          #}
           
           M[j,i]=M[i,j]
         }
@@ -261,11 +261,21 @@ powertest_OF_sq = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSiz
     
     outlier_factors_PP = function(X,k,nx,ny=ny,method=1,minpoints=20){
       M = distMppp(X,nx=nx,ny=ny,method=method,minpoints=minpoints)
-      if (sum(is.nan(M))>0){
-        return(NaN)
-      }
       n = length(X)
       m = length(k)
+      if (sum(is.nan(M))>0){
+        Mtemp = M[-n,-n]
+        while (sum(is.nan(Mtemp))>0) {
+          nan_index = which.max(colSums(is.nan(Mtemp)))
+          X = X[-nan_index]
+          Mtemp = Mtemp[-nan_index,-nan_index]
+          M = M[-nan_index,-nan_index]
+        }
+        if (sum(is.nan(M))>0){
+          return(matrix(NaN,nrow = n,ncol = m))
+        }
+      }
+      n = length(X)
       Result = matrix(0,nrow = n,ncol = m)
       colnames(Result) <- k
       for (i in  c(1:m)){
@@ -295,8 +305,8 @@ powertest_OF_sq = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSiz
     
     ResultpowerM1 = ResultpowerM1temp1
     for (q in c(2:(n/m))){
-      #setwd("/home/au591455/Rstuff/Results") 
-      setwd("C:/Users/simon/Desktop/TestR") 
+      setwd("/home/au591455/Rstuff/Results") 
+      #setwd("C:/Users/simon/Desktop/TestR") 
       tempC = readLines(path_of_log)
       writeLines(c(tempC,paste(name,"beginning the ",q," part ", Sys.time())),path_of_log)
       ResultpowerM1temp1 <- foreach (i= c((q*m-(m-1)):(q*m)), .combine="cbind", .packages = c("spatstat")) %:%
@@ -316,13 +326,13 @@ Data =  readRDS(file = "DataPPP.Rdata")
 
 
 Matern4a = readRDS(file = "Matern_a.Rdata")
-powertest_OF_sq(Outlier = Matern4a,Data=Data,name ="Power_MaternA_OFsq.Rdata",n=1000,method = 1,m=mm,squares = squares,DataSize=20,newlog=T)
+#powertest_OF_sq(Outlier = Matern4a,Data=Data,name ="Power_MaternA_OFsq.Rdata",n=1000,method = 1,m=mm,squares = squares,DataSize=20,newlog=T)
 
 Matern4b = readRDS(file = "Matern_b.Rdata")
-powertest_OF_sq(Outlier = Matern4b,Data=Data,name ="Power_MaternB_OFsq.Rdata",n=1000,method = 1,m=mm,squares = squares,DataSize=20)
+#powertest_OF_sq(Outlier = Matern4b,Data=Data,name ="Power_MaternB_OFsq.Rdata",n=1000,method = 1,m=mm,squares = squares,DataSize=20)
 
 Clust4a = readRDS(file = "Clust_a.Rdata")
-powertest_OF_sq(Outlier = Clust4a ,Data=Data,name ="Power_ClusterA_OFsq.Rdata",n=1000,method = 1,m=mm,squares = squares,DataSize=20 )
+#powertest_OF_sq(Outlier = Clust4a ,Data=Data,name ="Power_ClusterA_OFsq.Rdata",n=1000,method = 1,m=mm,squares = squares,DataSize=20 )
 
 Clust4b = readRDS(file = "Clust_b.Rdata")
 powertest_OF_sq(Outlier = Clust4b ,Data=Data,name ="Power_ClusterB_OFsq.Rdata",n=1000,method = 1,m=mm,squares = squares,DataSize=20)
