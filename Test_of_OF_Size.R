@@ -13,7 +13,7 @@ library("tictoc",lib.loc=liblocation )
 library("foreach",lib.loc=liblocation )
 library("doParallel",lib.loc=liblocation )
 library(utils)
-library("ppMeasures",lib.loc=liblocation )
+#library("ppMeasures",lib.loc=liblocation )
 
 registerDoParallel(4)
 mm=10
@@ -24,8 +24,8 @@ DataSize= c(20,25,30,35,40)
 setwd("/home/au591455/Rstuff/Results") 
 #setwd("C:/Users/simon/Desktop/TestR")
 powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,method=1,Kinterval = c(5:10)){
-  if(DataSize < Kinterval[length(Kinterval)] ){
-    Kinterval = Kinterval[Kinterval< DataSize]
+  if(min(DataSize) < Kinterval[length(Kinterval)] ){
+    Kinterval = Kinterval[Kinterval< min(DataSize)]
     print("Kinterval values cannot be bigger then the amount of point patterns")
   }
   if (is.null(n)){
@@ -42,11 +42,11 @@ powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,m
   }
 
   
-  stDistPP = function(X,Y,...){
-    p1 = cbind(X$x,X$y)
-    p2 = cbind(Y$x,Y$y)
-    return(stDist(p1, p2,alg="IMA",pm=1,bypassCheck=T, ...))
-  }
+  #stDistPP = function(X,Y,...){
+  #  p1 = cbind(X$x,X$y)
+  #  p2 = cbind(Y$x,Y$y)
+  #  return(stDist(p1, p2,alg="IMA",pm=1,bypassCheck=T, ...))
+  #}
   studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000){
     ##### preparations ----------------
     if (is.null(foos1) |  is.null(foos2) ){
@@ -222,10 +222,10 @@ powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,m
           M[i,j]=tempstore$statistic
         } else if (method==2){
           M[i,j]=nearest_point_metric(X[[i]],X[[j]])
-        } else if (method==3){
-          tempstore = stDistPP(X[[i]],X[[j]])
-          M[i,j]=tempstore$distance
-        }
+        } #else if (method==3){
+          #tempstore = stDistPP(X[[i]],X[[j]])
+         # M[i,j]=tempstore$distance
+        #}
         
         M[j,i]=M[i,j]
       }
@@ -291,7 +291,7 @@ powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,m
   Test_outlier_OF = function(Outlier,PPP,nx,ny=nx,method=1,minpoints=20,Kinterval){
     X = c(PPP,list(Outlier))
     if (length(X) < max(Kinterval)){
-      Kinterval = Kinterval[Kinterval< length(X)]
+      Kinterval = Kinterval[Kinterval < length(X)]
       print("Kinterval values cannot be bigger then the amount of point patterns")
     }
     n = length(PPP)
@@ -327,27 +327,29 @@ powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,m
   }
   close(path_of_log)
 }
-
+#nn =10000
+#Data = rpoispp(100,nsim=(4*nn+40))
+#saveRDS(Data,file = "DataPPP.Rdata")
 Data =  readRDS(file = "DataPPP.Rdata")
 
-Matern4a = readRDS(file = "Matern_a.Rdata")
-powertest_OF(Outlier = Matern4a,Data=Data,name ="Size_MaternA_OFT.Rdata",n=1000,method = 1,m=mm,squares =c(2,2),DataSize=DataSize,newlog=T)
+#Matern4a = readRDS(file = "Matern_a.Rdata")
+#powertest_OF(Outlier = Matern4a,Data=Data,name ="Size_MaternA_OFT.Rdata",n=1000,method = 1,m=mm,squares =c(2,3),DataSize=DataSize,newlog=T)
 
-Matern4b = readRDS(file = "Matern_b.Rdata")
-powertest_OF(Outlier = Matern4b,Data=Data,name ="Size_MaternB_OFT.Rdata",n=1000,method = 1,m=mm,squares = c(2,2),DataSize=DataSize)
+#Matern4b = readRDS(file = "Matern_b.Rdata")
+#powertest_OF(Outlier = Matern4b,Data=Data,name ="Size_MaternB_OFT.Rdata",n=1000,method = 1,m=mm,squares = c(2,3),DataSize=DataSize,newlog=T)
 
-Clust4a = readRDS(file = "Clust_a.Rdata")
-powertest_OF(Outlier = Clust4a ,Data=Data,name ="Size_ClusterA_OFT.Rdata",n=1000,method = 1,m=mm,squares = c(2,2),DataSize=DataSize )
+#Clust4a = readRDS(file = "Clust_a.Rdata")
+#powertest_OF(Outlier = Clust4a ,Data=Data,name ="Size_ClusterA_OFT.Rdata",n=1000,method = 1,m=mm,squares = c(2,3),DataSize=DataSize )
 
 Clust4b = readRDS(file = "Clust_b.Rdata")
-powertest_OF(Outlier = Clust4b ,Data=Data,name ="Size_ClusterB_OFT.Rdata",n=1000,method = 1,m=mm,squares = c(2,2),DataSize=DataSize)
+powertest_OF(Outlier = Clust4b ,Data=Data,name ="Size_ClusterB_OFT.Rdata",n=1000,method = 1,m=mm,squares = c(2,3),DataSize=DataSize)
 
 Clust4c = readRDS(file = "Clust_c.Rdata")
-powertest_OF(Outlier = Clust4c ,Data=Data,name ="Size_ClusterC_OFT.Rdata",n=1000,method = 1,m=mm,squares = c(2,2),DataSize=DataSize )
+powertest_OF(Outlier = Clust4c ,Data=Data,name ="Size_ClusterC_OFT.Rdata",n=1000,method = 1,m=mm,squares = c(2,3),DataSize=DataSize )
 
 
 poistest  = readRDS(file = "poisPPP.Rdata")
-powertest_OF(Outlier = poistest ,Data=Data,name ="Size_pois_OFT.Rdata",n=1000,method = 1,m=mm,squares = c(2,2),DataSize=DataSize )
+powertest_OF(Outlier = poistest ,Data=Data,name ="Size_pois_OFT.Rdata",n=1000,method = 1,m=mm,squares = c(2,3),DataSize=DataSize )
 
 
 

@@ -180,8 +180,8 @@ Permu_dist = function(PPP1,PPP2,nx,ny=nx,minpoints=20,use.tbar=FALSE,rinterval=r
 }
 
 nearest_pointdist = function(X,Y){
-  LX = coords(X)
-  LY = coords(Y)
+  LX = coords.ppp(X)
+  LY = coords.ppp(Y)
   FF = function(x){
     sqrt(x[1]^2 +x[2]^2)
   }
@@ -329,7 +329,7 @@ plot(hctest)
 
 library(colorspace)
 library(dendextend)
-
+library(circlize)
 make_dend = function(hc,k,label){
   n = length( hc$order)
   dend <- as.dendrogram(hc)
@@ -381,7 +381,7 @@ par(mfrow = c(1,1),mar = c(2,0.1, 0.1,2))
 tanglegram(dendlist(dend1,dend2), common_subtrees_color_lines = FALSE, highlight_distinct_edges  = TRUE, highlight_branches_lwd=FALSE,  margin_inner=7,lwd=2)
 
 vec = c(1:3)
-datavec = c(Data[vec],Matern4a[vec],Matern4a[vec],Clust4b[vec],Clust4b[vec],Clust4c[vec])
+datavec = c(Data[vec],Matern4a[vec],Matern4b[vec],Clust4a[vec],Clust4b[vec],Clust4c[vec])
 MM  = distMppp(datavec,method=1,nx=2,ny=3,minpoints=5)
 hctest4= agnes(MM,method = "complete")
 MM  = distMppp(datavec,method=2,nx=2,ny=3,minpoints=5)
@@ -391,18 +391,18 @@ hctest6= agnes(MM,method = "complete")
 plot(hctest)
 
 par(mfrow = c(3,1),mar = c(2,0.1, 0.1,2))
-Label = c(rep("Pois",3),rep("MaternA",3),rep("MaternB",5),rep("ClusteA",3),rep("ClusteB",3),rep("ClusteC",3))
+Label = c(rep("Pois",3),rep("MaternA",3),rep("MaternB",3),rep("ClusteA",3),rep("ClusteB",3),rep("ClusteC",3))
 dend4 = make_dend(hctest4,k=6,label=Label )
 
 plot(dend4,horiz =  TRUE, nodePar = list(cex = .0001))
 
-dend5 = make_dend(hctest2,k=3,label=Label )
+dend5 = make_dend(hctest5,k=6,label=Label )
 
-plot(dend2,horiz =  TRUE, nodePar = list(cex = .0001))
+plot(dend5,horiz =  TRUE, nodePar = list(cex = .0001))
 
-dend3 = make_dend(hctest3,k=3,label=Label )
+dend6 = make_dend(hctest6,k=6,label=Label )
 
-plot(dend3,horiz =  TRUE, nodePar = list(cex = .0001))
+plot(dend6,horiz =  TRUE, nodePar = list(cex = .0001))
 par(mfrow = c(1,1),mar = c(2,0.1, 0.1,2))
 
 load(file = "megacaryocytes.rda")
@@ -421,7 +421,7 @@ MM  = distMppp(datavec2,method=2,nx=2,ny=3,minpoints=5)
 hcmembrane2= agnes(MM,method = "complete")
 MM  = distMppp(datavec2,method=3,nx=2,ny=3,minpoints=5)
 hcmembrane3= agnes(MM,method = "complete")
-
+MM4  = distMppp(datavec2,method=1,nx=2,ny=3,minpoints=5)
 par(mfrow = c(3,1),mar = c(2,0.1, 0.1,2))
 Label = c(rep("control",5),rep("acid",5),rep("rotenone",5))
 dend_membrane1 = make_dend(hcmembrane1,k=3,label=Label )
@@ -436,4 +436,24 @@ dend_membrane3 = make_dend(hcmembrane3,k=3,label=Label )
 
 plot(dend_membrane3,horiz =  TRUE, nodePar = list(cex = .0001))
 par(mfrow = c(1,1),mar = c(2,0.1, 0.1,2))
+MMfuld  = distMppp(intermembrane_particles$pattern,method=1,nx=3,ny=3,minpoints=5)
+hcmembranefull= agnes(MMfuld,method = "complete")
+fullLabel  = intermembrane_particles$group
+dend_membranefull = as.dendrogram(hcmembranefull)
+#dend_membranefull = make_dend(hcmembranefull,k=3,label=fullLabel )
+#dend_membranefull = set(dend_membranefull,"branches_lwd", 2)
+#dend_membranefull = set(dend_membranefull,"branches_lty", 2)
+n = length( hc$order)
 
+dend_membranefull <- color_branches(dend_membranefull, k=3)
+
+
+labels(dend_membranefull) <- paste(as.character(fullLabel)[order.dendrogram(dend_membranefull)],
+                      "(",labels(dend_membranefull),")", 
+                      sep = "")
+
+dend_membranefull <- hang.dendrogram(dend_membranefull,hang_height=3)
+dend_membranefull <- set(dend_membranefull, "labels_cex", 0.6)
+circlize_dendrogram(dend_membranefull,
+                    labels_track_height = 0.2,
+                    dend_track_height = 0.5)
