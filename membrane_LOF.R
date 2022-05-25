@@ -15,8 +15,8 @@ library("doParallel",lib.loc=liblocation )
 library(utils)
 library("ppMeasures",lib.loc=liblocation )
 
-registerDoParallel(8)
-mm=10
+registerDoParallel(10)
+mm=20
 squares = list(c(2,2),c(3,2),c(3,3),c(3,4))
 
 
@@ -301,8 +301,8 @@ powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,m
   }
   
   ResultpowerM1temp1 <- foreach (i= c(1:m), .combine="cbind", .packages = c("spatstat","ppMeasures")) %dopar% {
-      Test_outlier_OF(Outlier = Outlier[[i]], PPP = Data[c((i*DS1-DS2):(i*DS1))],method = method, nx=squares[1],ny=squares[2],minpoints = 5,Kinterval=Kinterval)
-    }
+    Test_outlier_OF(Outlier = Outlier[[i]], PPP = Data[c((i*DS1-DS2):(i*DS1))],method = method, nx=squares[1],ny=squares[2],minpoints = 5,Kinterval=Kinterval)
+  }
   
   ResultpowerM1 = ResultpowerM1temp1
   for (q in c(2:(n/m))){
@@ -311,8 +311,8 @@ powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,m
     tempC = readLines(path_of_log)
     writeLines(c(tempC,paste(name,"beginning the ",q," part ", Sys.time())),path_of_log)
     ResultpowerM1temp1 <- foreach (i= c((q*m-(m-1)):(q*m)), .combine="cbind", .packages = c("spatstat","ppMeasures"))  %dopar% {
-        Test_outlier_OF(Outlier = Outlier[[i]], PPP = Data[c((i*DS1-DS2):(i*DS1))],method = method, nx=squares[1],ny=squares[2],minpoints = 5,Kinterval=Kinterval)
-      }
+      Test_outlier_OF(Outlier = Outlier[[i]], PPP = Data[c((i*DS1-DS2):(i*DS1))],method = method, nx=squares[1],ny=squares[2],minpoints = 5,Kinterval=Kinterval)
+    }
     ResultpowerM1  = cbind(ResultpowerM1,ResultpowerM1temp1)
     saveRDS(ResultpowerM1,file = name)
     tempC = readLines(path_of_log)
@@ -322,36 +322,51 @@ powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,m
   close(path_of_log)
 }
 
-Data =  readRDS(file = "DataPPP.Rdata")
+#load(file = "intermembrane_particles.rda")
+#tempv = c(1:length(intermembrane_particles$pattern))
+#for (i in c(1:length(intermembrane_particles$pattern))) {
+#  intermembrane_particles$pattern[[i]] =rescale(intermembrane_particles$pattern[[i]],512)
+#  tempv[i] = intermembrane_particles$pattern[[i]]$n
+#}
+
+#control = intermembrane_particles$pattern[intermembrane_particles$group == "control"]
+#acid= intermembrane_particles$pattern[intermembrane_particles$group == "acid"]
+#rotenone = intermembrane_particles$pattern[intermembrane_particles$group == "rotenone"]
+
+#generate_pp = function(ppp, size,prob){
+#  nsim_temp = table(sample(c(1:length(ppp)), size=size, replace =T))
+#  temp_data =rthin(ppp[[1]],P=prob,nsim = nsim_temp[1] )
+#  for (qq in c(2:length(nsim_temp))) {
+#    temp_data =  c(temp_data , rthin(ppp[[qq]],P=prob,nsim = nsim_temp[qq] ))
+#  }
+#  return(sample(temp_data))
+#}
+
+#control_data = generate_pp(control,size = 1000,prob = 0.7) 
+#saveRDS(control_data, file = "control_data.Rdata")
+control_data = readRDS("control_data.Rdata")
+#acid_data = generate_pp(acid,size = 1000,prob = 0.7) 
+#saveRDS(acid_data , file = "acid_data ")
+acid_data = readRDS("acid_data.Rdata")
+#rotenone_data = generate_pp(rotenone,size = 1000,prob = 0.7) 
+#saveRDS(rotenone_data, file = "rotenone_data.Rdata")
+rotenone_data = readRDS("rotenone_data.Rdata")
+#control_pop = generate_pp(control,size = 20*1000,prob = 0.7) 
+#saveRDS(control_pop, file = "control_pop.Rdata")
+control_pop = readRDS("control_pop.Rdata")
+
+#powertest_OF(Outlier = control_data,Data=control_pop,name ="memb_LOF_control_T.Rdata",n=1000,method = 1,m=mm,squares =c(2,3),DataSize=20,newlog=T)
+#powertest_OF(Outlier = acid_data,Data=control_pop,name ="memb_LOF_acid_T.Rdata",n=1000,method = 1,m=mm,squares =c(2,3),DataSize=20)
+#powertest_OF(Outlier = rotenone_data,Data=control_pop,name ="memb_LOF_rotenone_T.Rdata",n=1000,method = 1,m=mm,squares =c(2,3),DataSize=20)
+
+#powertest_OF(Outlier = control_data,Data=control_pop,name ="memb_LOF_control_NP.Rdata",n=1000,method = 2,m=mm,squares =c(2,2),DataSize=20)
+#powertest_OF(Outlier = acid_data,Data=control_pop,name ="memb_LOF_acid_NP.Rdata",n=1000,method = 2,m=mm,squares =c(2,2),DataSize=20)
+#powertest_OF(Outlier = rotenone_data,Data=control_pop,name ="memb_LOF_rotenone_NP.Rdata",n=1000,method = 2,m=mm,squares =c(2,2),DataSize=20)
 
 
-Matern4a = readRDS(file = "Matern_a.Rdata")
-#powertest_OF(Outlier = Matern4a,Data=Data,name ="Power_MaternA_OFNP.Rdata",n=1000,method = 2,m=mm,squares =c(2,2),DataSize=20,newlog=T)
-#powertest_OF(Outlier = Matern4a,Data=Data,name ="Power_MaternA_OFST.Rdata",n=1000,method = 3,m=mm,squares =c(2,2),DataSize=20)
-
-Matern4b = readRDS(file = "Matern_b.Rdata")
-#powertest_OF(Outlier = Matern4b,Data=Data,name ="Power_MaternB_OFNP.Rdata",n=1000,method = 2,m=mm,squares = c(2,2),DataSize=20)
-#powertest_OF(Outlier = Matern4b,Data=Data,name ="Power_MaternB_OFST.Rdata",n=1000,method = 3,m=mm,squares = c(2,2),DataSize=20)
-
-Clust4a = readRDS(file = "Clust_a.Rdata")
-#powertest_OF(Outlier = Clust4a ,Data=Data,name ="Power_ClusterA_OFNP.Rdata",n=1000,method = 2,m=mm,squares = c(2,2),DataSize=20 )
-#powertest_OF(Outlier = Clust4a ,Data=Data,name ="Power_ClusterA_OFST.Rdata",n=1000,method = 3,m=mm,squares = c(2,2),DataSize=20 )
-
-Clust4b = readRDS(file = "Clust_b.Rdata")
-#powertest_OF(Outlier = Clust4b ,Data=Data,name ="Power_ClusterB_OFNP.Rdata",n=1000,method = 2,m=mm,squares = c(2,2),DataSize=20)
-#powertest_OF(Outlier = Clust4b ,Data=Data,name ="Power_ClusterB_OFST.Rdata",n=1000,method = 3,m=mm,squares = c(2,2),DataSize=20)
-
-Clust4c = readRDS(file = "Clust_c.Rdata")
-powertest_OF(Outlier = Clust4c ,Data=Data,name ="Power_ClusterC_OFNP.Rdata",n=1000,method = 2,m=mm,squares = c(2,2),DataSize=20 )
-#powertest_OF(Outlier = Clust4c ,Data=Data,name ="Power_ClusterC_OFST.Rdata",n=1000,method = 3,m=mm,squares = c(2,2),DataSize=20 )
-
-
-poistest  = readRDS(file = "poisPPP.Rdata")
-powertest_OF(Outlier = poistest ,Data=Data,name ="pois_OFNP.Rdata",n=1000,method = 2,m=mm,squares = c(2,2),DataSize=20 )
-#powertest_OF(Outlier = poistest ,Data=Data,name ="pois_OFST.Rdata",n=1000,method = 3,m=mm,squares = c(2,2),DataSize=20 )
-
-
-
+powertest_OF(Outlier = control_data,Data=control_pop,name ="memb_LOF_control_ST.Rdata",n=500,method = 3,m=mm,squares =c(2,2),DataSize=20)
+powertest_OF(Outlier = acid_data,Data=control_pop,name ="memb_LOF_acid_ST.Rdata",n=500,method = 3,m=mm,squares =c(2,2),DataSize=20)
+powertest_OF(Outlier = rotenone_data,Data=control_pop,name ="memb_LOF_rotenone_ST.Rdata",n=500,method = 3,m=mm,squares =c(2,2),DataSize=20)
 
 
 stopImplicitCluster()

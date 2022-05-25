@@ -1,5 +1,5 @@
-#liblocation = "/home/au591455/Rstuff/library"
-liblocation = NULL
+liblocation = "/home/au591455/Rstuff/library"
+#liblocation = NULL
 library("spatstat.data",lib.loc=liblocation )
 library("spatstat.geom",lib.loc=liblocation )
 library("spatstat.random",lib.loc=liblocation )
@@ -13,17 +13,15 @@ library("tictoc",lib.loc=liblocation )
 library("foreach",lib.loc=liblocation )
 library("doParallel",lib.loc=liblocation )
 library(utils)
-library("ppMeasures",lib.loc=liblocation )
+#library("ppMeasures",lib.loc=liblocation )
 
-registerDoParallel(8)
-mm=10
-squares = list(c(2,2),c(3,2),c(3,3),c(3,4))
-
+registerDoParallel(4)
+mm=20
 
 
-#setwd("/home/au591455/Rstuff/Results") 
-setwd("C:/Users/simon/Desktop/TestR")
-powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,method=1,Kinterval = c(5:10)){
+setwd("/home/au591455/Rstuff/Results") 
+#setwd("C:/Users/simon/Desktop/TestR")
+powertest_membrane = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,method=1,Kinterval = c(5:10)){
   if(DataSize < Kinterval[length(Kinterval)] ){
     Kinterval = Kinterval[Kinterval< DataSize]
     print("Kinterval values cannot be bigger then the amount of point patterns")
@@ -32,8 +30,8 @@ powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,m
     n = length(Outlier)
   }
   
-  #logpath = "/home/au591455/Rstuff/Results/logOF.txt"
-  logpath = "C:/Users/simon/Desktop/TestR/logOF.txt"
+  logpath = "/home/au591455/Rstuff/Results/logOF.txt"
+  #logpath = "C:/Users/simon/Desktop/TestR/logOF.txt"
   path_of_log<-file(logpath)
   if (newlog){
     writeLines(paste("Start UP",Sys.time()), path_of_log)
@@ -191,6 +189,43 @@ powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,m
     return(studpermut.test.Ute(foos1 = ResultPPP1,foos2= ResultPPP2,use.tbar=use.tbar,nperm=nperm))
   }
   
+  OutlierPPP_Permu2 = function(Outlier,PPP,nx,ny=nx,minpoints=20,use.tbar=FALSE,rinterval,nperm=999,sumfunc=Kest,...){
+    
+    grid1 = quadrats(Outlier,nx=nx,ny=ny)
+    splitOutlier = split(Outlier,f=grid1)
+    OutlierStat = NULL
+    for(i in c(1:(nx*ny))){
+      if(splitOutlier[[i]]$n >= minpoints){
+        if (is.null(OutlierStat)){
+          TEMPF =  sumfunc(splitOutlier[[i]],r=rinterval)
+          OutlierStat = matrix(TEMPF$iso , byrow = F, ncol = 1,nrow = length(TEMPF$iso))
+        } else{
+          OutlierStat = cbind(OutlierStat,sumfunc(splitOutlier[[i]],r=rinterval)$iso )
+        }
+      }
+    }
+    n = length(PPP)
+    PPPStat = NULL
+    splitPP = list()
+    for (i in c(1:n)){
+      grid2 = quadrats(PPP[[i]],nx=nx,ny=ny)
+      splitPP = split(PPP[[i]],f=grid2)
+      for(j in c(1:(nx*ny))){
+        #### ==== Comment from Ute: where does j occur in this inner loop? =========        
+        if(splitPP[[j]]$n >= minpoints){
+          sumfuncR = sumfunc(splitPP[[j]],r=rinterval)$iso
+          if (is.null( PPPStat)){
+            PPPStat = matrix(sumfuncR , byrow = F, ncol = 1,nrow = length(sumfuncR))
+          } else{
+            PPPStat = cbind(PPPStat,sumfuncR )
+          }
+        }
+      }
+    }
+    
+    return(studpermut.test.Ute(foos1 = OutlierStat,foos2= PPPStat,use.tbar=use.tbar,nperm=nperm))
+  }
+  
   
   nearest_pointdist = function(X,Y){
     LX = coords(X)
@@ -300,18 +335,24 @@ powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,m
     return(mean(Result[n+1] <= Result))
   }
   
-  ResultpowerM1temp1 <- foreach (i= c(1:m), .combine="cbind", .packages = c("spatstat","ppMeasures")) %dopar% {
-      Test_outlier_OF(Outlier = Outlier[[i]], PPP = Data[c((i*DS1-DS2):(i*DS1))],method = method, nx=squares[1],ny=squares[2],minpoints = 5,Kinterval=Kinterval)
+  
+  
+  rinterval = seq(0,0.125,length.out = 30)
+  ResultpowerM1temp1 <- foreach (i= c(1:m), .combine="cbind", .packages = c("spatstat")) %dopar% {
+    
+    temp =OutlierPPP_Permu2(Outlier = Outlier[[i]], PPP = Data[c((i*DS1-DS2):(i*DS1))], nx=squares[1],ny=squares[2],rinterval=rinterval,minpoints=5,use.tbar=TRUE)
+    temp$p.value
     }
   
   ResultpowerM1 = ResultpowerM1temp1
   for (q in c(2:(n/m))){
-    #setwd("/home/au591455/Rstuff/Results") 
-    setwd("C:/Users/simon/Desktop/TestR") 
+    setwd("/home/au591455/Rstuff/Results") 
+    #setwd("C:/Users/simon/Desktop/TestR") 
     tempC = readLines(path_of_log)
     writeLines(c(tempC,paste(name,"beginning the ",q," part ", Sys.time())),path_of_log)
-    ResultpowerM1temp1 <- foreach (i= c((q*m-(m-1)):(q*m)), .combine="cbind", .packages = c("spatstat","ppMeasures"))  %dopar% {
-        Test_outlier_OF(Outlier = Outlier[[i]], PPP = Data[c((i*DS1-DS2):(i*DS1))],method = method, nx=squares[1],ny=squares[2],minpoints = 5,Kinterval=Kinterval)
+    ResultpowerM1temp1 <- foreach (i= c((q*m-(m-1)):(q*m)), .combine="cbind", .packages = c("spatstat"))  %dopar% {
+      temp =OutlierPPP_Permu2(Outlier = Outlier[[i]], PPP = Data[c((i*DS1-DS2):(i*DS1))], nx=squares[1],ny=squares[2],rinterval=rinterval,minpoints=5,use.tbar=TRUE)
+      temp$p.value
       }
     ResultpowerM1  = cbind(ResultpowerM1,ResultpowerM1temp1)
     saveRDS(ResultpowerM1,file = name)
@@ -322,35 +363,19 @@ powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,m
   close(path_of_log)
 }
 
-Data =  readRDS(file = "DataPPP.Rdata")
 
 
-Matern4a = readRDS(file = "Matern_a.Rdata")
-#powertest_OF(Outlier = Matern4a,Data=Data,name ="Power_MaternA_OFNP.Rdata",n=1000,method = 2,m=mm,squares =c(2,2),DataSize=20,newlog=T)
-#powertest_OF(Outlier = Matern4a,Data=Data,name ="Power_MaternA_OFST.Rdata",n=1000,method = 3,m=mm,squares =c(2,2),DataSize=20)
+control_data = readRDS("control_data.Rdata")
 
-Matern4b = readRDS(file = "Matern_b.Rdata")
-#powertest_OF(Outlier = Matern4b,Data=Data,name ="Power_MaternB_OFNP.Rdata",n=1000,method = 2,m=mm,squares = c(2,2),DataSize=20)
-#powertest_OF(Outlier = Matern4b,Data=Data,name ="Power_MaternB_OFST.Rdata",n=1000,method = 3,m=mm,squares = c(2,2),DataSize=20)
+acid_data = readRDS("acid_data.Rdata")
 
-Clust4a = readRDS(file = "Clust_a.Rdata")
-#powertest_OF(Outlier = Clust4a ,Data=Data,name ="Power_ClusterA_OFNP.Rdata",n=1000,method = 2,m=mm,squares = c(2,2),DataSize=20 )
-#powertest_OF(Outlier = Clust4a ,Data=Data,name ="Power_ClusterA_OFST.Rdata",n=1000,method = 3,m=mm,squares = c(2,2),DataSize=20 )
+rotenone_data = readRDS("rotenone_data.Rdata")
 
-Clust4b = readRDS(file = "Clust_b.Rdata")
-#powertest_OF(Outlier = Clust4b ,Data=Data,name ="Power_ClusterB_OFNP.Rdata",n=1000,method = 2,m=mm,squares = c(2,2),DataSize=20)
-#powertest_OF(Outlier = Clust4b ,Data=Data,name ="Power_ClusterB_OFST.Rdata",n=1000,method = 3,m=mm,squares = c(2,2),DataSize=20)
+control_pop = readRDS("control_pop.Rdata")
 
-Clust4c = readRDS(file = "Clust_c.Rdata")
-powertest_OF(Outlier = Clust4c ,Data=Data,name ="Power_ClusterC_OFNP.Rdata",n=1000,method = 2,m=mm,squares = c(2,2),DataSize=20 )
-#powertest_OF(Outlier = Clust4c ,Data=Data,name ="Power_ClusterC_OFST.Rdata",n=1000,method = 3,m=mm,squares = c(2,2),DataSize=20 )
-
-
-poistest  = readRDS(file = "poisPPP.Rdata")
-powertest_OF(Outlier = poistest ,Data=Data,name ="pois_OFNP.Rdata",n=1000,method = 2,m=mm,squares = c(2,2),DataSize=20 )
-#powertest_OF(Outlier = poistest ,Data=Data,name ="pois_OFST.Rdata",n=1000,method = 3,m=mm,squares = c(2,2),DataSize=20 )
-
-
+powertest_membrane(Outlier = control_data,Data=control_pop,name ="memb_perm_control.Rdata",n=1000,m=mm,squares =c(2,3),DataSize=20,newlog=T)
+powertest_membrane(Outlier = acid_data,Data=control_pop,name ="memb_perm_acid.Rdata",n=1000,m=mm,squares =c(2,3),DataSize=20)
+powertest_membrane(Outlier = rotenone_data,Data=control_pop,name ="memb_perm_rotenone.Rdata",n=1000,m=mm,squares =c(2,3),DataSize=20)
 
 
 

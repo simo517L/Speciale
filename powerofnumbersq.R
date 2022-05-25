@@ -1,5 +1,5 @@
-liblocation = "/home/au591455/Rstuff/library"
-#liblocation = NULL
+#liblocation = "/home/au591455/Rstuff/library"
+liblocation = NULL
 library("spatstat.data",lib.loc=liblocation )
 library("spatstat.geom",lib.loc=liblocation )
 library("spatstat.random",lib.loc=liblocation )

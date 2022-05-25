@@ -18,7 +18,7 @@ conf_of_power=function(M,n){
   upper_lim = c(1:nn)
   lower_lim = c(1:nn)
   for (i in c(1:nn)){
-    TEMP = prop.test(Result[i],n)
+    TEMP = prop.test(Result[i], n, correct = FALSE)
     p_value[i] = TEMP$estimate
     upper_lim[i] = TEMP$conf.int[1]
     lower_lim[i] =  TEMP$conf.int[2]
