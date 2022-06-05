@@ -16,21 +16,19 @@ library("doParallel",lib.loc=liblocation )
 registerDoParallel(3)
 mm=20
 squares = list(c(2,2),c(3,2),c(3,3),c(3,4))
-setwd("/home/au591455/Rstuff/Results") 
-#setwd("C:/Users/simon/Desktop/TestR") 
+path = "C:/Users/simon/Desktop/SpecialeProject/Speciale/Data" # Remember to set your own path 
+setwd(path)  
 
-poweroftest = function(Outlier,Data,name,m,squares,newlog = F,minpoints=20){
+poweroftest = function(Outlier,Data,name,m,squares,newlog = F,minpoints=20,path){
   n = length(Outlier)
-logpath = "/home/au591455/Rstuff/Results/log.txt"
-#logpath = "C:/Users/simon/Desktop/TestR/log.txt"
+logpath = "C:/Users/simon/Desktop/SpecialeProject/Speciale/permLOG.txt"
 path_of_log<-file(logpath)
 if (newlog){
-  writeLines("Start UP", path_of_log)
+  writeLines(paste("Start UP",Sys.time()), path_of_log)
 }
 
-  
-studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000)
-{
+# This is function supplied by Ute Hahn to run the permutation test for the T stat. 
+studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000){
   ##### preparations ----------------
   if (is.null(foos1) |  is.null(foos2) ){
     ptt <- list(statistic = NaN, 
@@ -76,30 +74,9 @@ studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000)
     class(ptt) <- "htest"
     return(ptt)
   } # need at least two per group
-
+  
   m <- m1+m2
   foos <- cbind(foos1, foos2)
-  # get the permutations. 
-  # If m1 == m2, break the symmetry and save half time and memory!
-  # 
-  # allcomb <- is.null(nperm)
-  # ncomb <- if (m1 == m2) choose(m-1, m1-1) else choose(m, m1)
-  # if nperm is larger than the actual number of combinations, also use all of them
-  # if (!allcomb)
-  # {
-  # ncomb <- if (m1 == m2) choose(m-1, m1-1) else choose(m, m1)
-  #  if (ncomb < (nperm + 1)) allcomb <- TRUE
-  # }
-  # if (allcomb)
-  #   {
-  #   if (m1 == m2) index1 <- rbind(1, combn(m - 1, m1 - 1) + 1)
-  #   else index1 <- combn(m, m1)
-  # } else {
-  #   if (m1 == m2) index1 <- rbind(1, replicate(nperm, sample(m - 1, m1 - 1) + 1)) 
-  #   else index1 <- replicate(nperm, sample(m, m1)) 
-  #   index1 <- cbind((1 : m1), index1) # the first is the original
-  # }
-  # 
   index1 <- cbind(1:m1, replicate(nperm, sample(m, m1)))
   
   # do the calculations the good old fashioned way with sums and sqs, to save time
@@ -146,47 +123,50 @@ studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000)
   return(ptt)
 }
 
+
+
+#This function is used to run the permutation outlier test.
+OutlierPPP_Permu = function(Outlier,PPP,nx,ny=nx,minpoints=20,use.tbar=T,rinterval,nperm=999,sumfunc=Kest,...){
   
-  
-  OutlierPPP_Permu = function(Outlier,PPP,nx,ny=nx,minpoints=20,use.tbar=FALSE,rinterval,nperm=999,sumfunc=Kest,...){
-    
-    grid1 = quadrats(Outlier,nx=nx,ny=ny)
-    splitOutlier = split(Outlier,f=grid1)
-    OutlierStat = NULL
-    for(i in c(1:(nx*ny))){
-      if(splitOutlier[[i]]$n >= minpoints){
-        if (is.null(OutlierStat)){
-          TEMPF =  sumfunc(splitOutlier[[i]],r=rinterval)
-          OutlierStat = matrix(TEMPF$iso , byrow = F, ncol = 1,nrow = length(TEMPF$iso))
+  grid1 = quadrats(Outlier,nx=nx,ny=ny)
+  splitOutlier = split(Outlier,f=grid1)
+  OutlierStat = NULL
+  for(i in c(1:(nx*ny))){
+    if(splitOutlier[[i]]$n >= minpoints){
+      if (is.null(OutlierStat)){
+        TEMPF =  sumfunc(splitOutlier[[i]],r=rinterval)
+        OutlierStat = matrix(TEMPF$iso , byrow = F, ncol = 1,nrow = length(TEMPF$iso))
+      } else{
+        OutlierStat = cbind(OutlierStat,sumfunc(splitOutlier[[i]],r=rinterval)$iso )
+      }
+    }
+  }
+  n = length(PPP)
+  PPPStat = NULL
+  splitPP = list()
+  for (i in c(1:n)){
+    grid2 = quadrats(PPP[[i]],nx=nx,ny=ny)
+    splitPP = split(PPP[[i]],f=grid2)
+    for(j in c(1:(nx*ny))){
+      if(splitPP[[j]]$n >= minpoints){
+        sumfuncR = sumfunc(splitPP[[j]],r=rinterval)$iso
+        if (is.null( PPPStat)){
+          PPPStat = matrix(sumfuncR , byrow = F, ncol = 1,nrow = length(sumfuncR))
         } else{
-          OutlierStat = cbind(OutlierStat,sumfunc(splitOutlier[[i]],r=rinterval)$iso )
+          PPPStat = cbind(PPPStat,sumfuncR )
         }
       }
     }
-    n = length(PPP)
-    PPPStat = NULL
-    splitPP = list()
-    for (i in c(1:n)){
-      grid2 = quadrats(PPP[[i]],nx=nx,ny=ny)
-      splitPP = split(PPP[[i]],f=grid2)
-      for(j in c(1:(nx*ny))){
-#### ==== Comment from Ute: where does j occur in this inner loop? =========        
-        if(splitPP[[j]]$n >= minpoints){
-          sumfuncR = sumfunc(splitPP[[j]],r=rinterval)$iso
-          if (is.null( PPPStat)){
-            PPPStat = matrix(sumfuncR , byrow = F, ncol = 1,nrow = length(sumfuncR))
-          } else{
-            PPPStat = cbind(PPPStat,sumfuncR )
-          }
-        }
-      }
-    }
-    
-    return(studpermut.test.Ute(foos1 = OutlierStat,foos2= PPPStat,use.tbar=use.tbar,nperm=nperm))
   }
   
+  return(studpermut.test.Ute(foos1 = OutlierStat,foos2= PPPStat,use.tbar=use.tbar,nperm=nperm))
+}
 
-  rinterval = seq(0,0.125,length.out = 30)
+
+
+# We define the interval for the summary function
+rinterval = seq(0,0.125,length.out = 30)
+# we run the first m times, so we have some data to work with. After that we save the after the code has run m times. 
   ResultpowerM1temp1 <- foreach (i= c(1:m), .combine="cbind", .packages = c("spatstat")) %:%
     foreach (j= c(1:length(squares)), .combine="c", .packages = c("spatstat")) %dopar% {
       QQQ = OutlierPPP_Permu(Outlier = Outlier[[i]], PPP = Data[c((i*20-19):(i*20))],rinterval = rinterval , nx=squares[[j]][1],ny=squares[[j]][2],minpoints = minpoints)
@@ -195,8 +175,7 @@ studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000)
   ResultpowerM1 = ResultpowerM1temp1
   for (q in c(2:(n/m))){
     print(q)
-    setwd("/home/au591455/Rstuff/Results") 
-    #setwd("C:/Users/simon/Desktop/TestR") 
+    setwd(path) 
     tempC = readLines(path_of_log)
     writeLines(c(tempC,paste(name,"beginning the ",q," part ", Sys.time())),path_of_log)
     ResultpowerM1temp1 <- foreach (i= c((q*m-(m-1)):(q*m)), .combine="cbind", .packages = c("spatstat")) %:%
@@ -217,30 +196,30 @@ studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000)
 Data =  readRDS(file = "DataPPP.Rdata")
 Matern4a = readRDS(file = "Matern_a.Rdata")
 
-poweroftest(Outlier = Matern4a[1:1000],Data=Data,name ="PowerMaternA.Rdata",m=mm,squares = squares,newlog=T,minpoints=5 )
+poweroftest(Outlier = Matern4a[1:1000],Data=Data,name ="PowerMaternA.Rdata",m=mm,squares = squares,newlog=T,minpoints=5,path=path )
 
 Matern4b = readRDS(file = "Matern_b.Rdata")
 
-poweroftest(Outlier = Matern4b[1:1000] ,Data=Data,name ="PowerMaternB.Rdata",m=mm,squares = squares,minpoints=5)
+poweroftest(Outlier = Matern4b[1:1000] ,Data=Data,name ="PowerMaternB.Rdata",m=mm,squares = squares,minpoints=5,path=path)
 
 Clust4a = readRDS(file = "Clust_a.Rdata")
 
-poweroftest(Outlier = Clust4a[1:1000]  ,Data=Data,name ="PowerClusterA.Rdata",m=mm,squares = squares,minpoints=5 )
+poweroftest(Outlier = Clust4a[1:1000]  ,Data=Data,name ="PowerClusterA.Rdata",m=mm,squares = squares,minpoints=5,path=path )
 
 Clust4b = readRDS(file = "Clust_b.Rdata")
 
-poweroftest(Outlier = Clust4b[1:1000]  ,Data=Data,name ="PowerClusterB.Rdata",m=mm,squares = squares,minpoints=5)
+poweroftest(Outlier = Clust4b[1:1000]  ,Data=Data,name ="PowerClusterB.Rdata",m=mm,squares = squares,minpoints=5,path=path)
 
 
 Clust4c = readRDS(file = "Clust_c.Rdata")
 
-poweroftest(Outlier = Clust4c[1:1000]  ,Data=Data,name ="PowerClusterC.Rdata",m=mm,squares = squares,minpoints=5 )
+poweroftest(Outlier = Clust4c[1:1000]  ,Data=Data,name ="PowerClusterC.Rdata",m=mm,squares = squares,minpoints=5,path=path )
 
 
 
 poistest  = readRDS(file = "poisPPP.Rdata")
 
-poweroftest(Outlier = poistest[1:1000] ,Data=Data,name ="PowerpoisTest.Rdata",m=mm,squares = squares,minpoints =5 )
+poweroftest(Outlier = poistest[1:1000] ,Data=Data,name ="PowerpoisTest.Rdata",m=mm,squares = squares,minpoints =5,path=path )
 
 
 

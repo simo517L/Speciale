@@ -11,6 +11,8 @@ library("iterators",lib.loc=liblocation )
 library("tictoc",lib.loc=liblocation )
 library("foreach",lib.loc=liblocation )
 library("doParallel",lib.loc=liblocation )
+
+# This function used prop.test to make a confidens interval for our data
 conf_of_power=function(M,n){
   Result = rowSums(M)
   nn = length( Result)
@@ -26,7 +28,7 @@ conf_of_power=function(M,n){
   return(data.frame(p_value=p_value,upper_lim=upper_lim,lower_lim=lower_lim))
 }
 
-
+# This function plots the data
 plot_of_power = function(Data,Size,X,conf = FALSE,title="",legendC = FALSE,legendNames=NULL,yval=NULL){
   if (!is.null(yval)){
     a=yval[1]
@@ -124,37 +126,13 @@ plot_of_power = function(Data,Size,X,conf = FALSE,title="",legendC = FALSE,legen
 
 
 
-test_of_power = function(X, Outlier,Data,testrange=0.3,method){
-  if (method == 1){
-    r = seq(0.05,testrange,0.05)
-    m = length(r)
-    power_result  =c(1:m)
-    for ( j in c(1:m)){
-      QQQ = OutlierPPP(Outlier = Outlier, PPP =  Data , nx=2,minpoints = 10,rinterval=c(0,r[j]))
-      power_result[m] = QQQ$p.value < 0.05
-    }
-    
-  } else if (method ==2){
-    squares=X
-    m = length(squares)
-    power_result  =c(1:m)
-    for ( j in c(1:m)){
-      QQQ = OutlierPPP(Outlier = Outlier, PPP =  Data , nx=squares[[j]][1],ny=squares[[j]][2],minpoints = 5)
-      power_result[m] = QQQ$p.value < 0.05
-    }
-    
-  }
-  return(power_result)
-}
-setwd("C:/Users/simon/Desktop/TestR")
-result_Mata_sumfunc_sq = readRDS(file = "PowerMaternA.Rdata")
 
+path = "C:/Users/simon/Desktop/SpecialeProject/Speciale/Data" # Remember to set your own path 
+setwd(path)  
+# then we load the the results for the permutation test and plot then using the plot_of_power  function 
 number_of_squares = c(4,6,9,12) 
 par(mfrow = c(3,2))
-sum(is.nan(colMeans(result_Mata_sumfunc_sq)))
-
-#result_Mata_sumfunc_sq = result_Mata_sumfunc_sq[,!is.nan(colMeans(result_Mata_sumfunc_sq))]
-sum(is.nan(colMeans(result_Mata_sumfunc_sq)))
+result_Mata_sumfunc_sq = readRDS(file = "PowerMaternA.Rdata")
 
 power_Mata_sunfunc_sq = result_Mata_sumfunc_sq <=  0.05
 sum(is.nan(colMeans(result_Mata_sumfunc_sq)) == T)

@@ -1,7 +1,7 @@
-
-# We start by loading the packages we need
-#liblocation = "C:/Users/simon/Desktop/TestR"
-liblocation = NULL
+# We start by loading the packages we need.
+# Note that load the package locally, so that this code could run on a server. 
+#liblocation = "/home/au591455/Rstuff/library"
+liblocation = "C:/Users/simon/Desktop/TestR"
 library("spatstat.data",lib.loc=liblocation )
 library("spatstat.geom",lib.loc=liblocation )
 library("spatstat.random",lib.loc=liblocation )
@@ -13,25 +13,26 @@ library("codetools",lib.loc=liblocation )
 library("iterators",lib.loc=liblocation )
 library("tictoc",lib.loc=liblocation )
 library("foreach",lib.loc=liblocation )
-library("doParallel",lib.loc=NULL )
+library("doParallel",lib.loc=liblocation )
 library("cluster",lib.loc=liblocation)
 library(utils)
-
 library("ppMeasures",lib.loc=liblocation)
-
 library("foreign",lib.loc=liblocation)
 library("maps",lib.loc=liblocation)
 library("shapefiles",lib.loc=liblocation)
 library("sp",lib.loc=liblocation)
 library("fossil",lib.loc=liblocation)
 
-# we define the function, there will be needed
+# We define the function, there will be needed. 
+
+# This is a wrapper function for stDist, so it works on point patterns. 
 stDistPP = function(X,Y,...){
   p1 = cbind(X$x,X$y)
   p2 = cbind(Y$x,Y$y)
-  return(stDist(p1, p2,alg="IMA",pm=1,bypassCheck=T, ...))
+  return(stDist(p1, p2,pm=1,by,alg="IMA",bypassCheck=T, ...))
 }
 
+# This is function supplied by Ute Hahn to run the permutation test for the T stat. 
 studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000){
   ##### preparations ----------------
   if (is.null(foos1) |  is.null(foos2) ){
@@ -81,27 +82,6 @@ studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000){
   
   m <- m1+m2
   foos <- cbind(foos1, foos2)
-  # get the permutations. 
-  # If m1 == m2, break the symmetry and save half time and memory!
-  # 
-  # allcomb <- is.null(nperm)
-  # ncomb <- if (m1 == m2) choose(m-1, m1-1) else choose(m, m1)
-  # if nperm is larger than the actual number of combinations, also use all of them
-  # if (!allcomb)
-  # {
-  # ncomb <- if (m1 == m2) choose(m-1, m1-1) else choose(m, m1)
-  #  if (ncomb < (nperm + 1)) allcomb <- TRUE
-  # }
-  # if (allcomb)
-  #   {
-  #   if (m1 == m2) index1 <- rbind(1, combn(m - 1, m1 - 1) + 1)
-  #   else index1 <- combn(m, m1)
-  # } else {
-  #   if (m1 == m2) index1 <- rbind(1, replicate(nperm, sample(m - 1, m1 - 1) + 1)) 
-  #   else index1 <- replicate(nperm, sample(m, m1)) 
-  #   index1 <- cbind((1 : m1), index1) # the first is the original
-  # }
-  # 
   index1 <- cbind(1:m1, replicate(nperm, sample(m, m1)))
   
   # do the calculations the good old fashioned way with sums and sqs, to save time
@@ -148,6 +128,8 @@ studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000){
   return(ptt)
 }
 
+
+# This is the function we use to calculate the T stat. distance for the distMPPP
 Permu_dist = function(PPP1,PPP2,nx,ny=nx,minpoints=20,use.tbar=FALSE,rinterval,nperm=1,sumfunc=Kest,...){
   
   grid1 = quadrats(PPP1,nx=nx,ny=ny)
@@ -180,6 +162,7 @@ Permu_dist = function(PPP1,PPP2,nx,ny=nx,minpoints=20,use.tbar=FALSE,rinterval,n
   return(studpermut.test.Ute(foos1 = ResultPPP1,foos2= ResultPPP2,use.tbar=use.tbar,nperm=nperm))
 }
 
+# This function calculate the nearest point distance.
 nearest_pointdist = function(X,Y){
   LX = coords(X)
   LY = coords(Y)
@@ -193,24 +176,24 @@ nearest_pointdist = function(X,Y){
   }
   return(result)
 }
+#This is function used to calculate the symmetrical nearest point distance
 nearest_point_metric = function(X,Y){
   return(nearest_pointdist(X,Y)+nearest_pointdist(Y,X))
 }
-
-distMppp = function(X,nx=4,ny=nx,method=1,minpoints=20,sumfunc=Kest,rinterval=seq(0,0.125,length.out = 30),...){
-  
+#The distMppp function was made to calculate distance matrices for a set of point patterns
+distMppp = function(X,nx=3,ny=nx,method=1,minpoints=20,sumfunc=Kest,rinterval = seq(0,0.125,length.out = 30),...){
   n = length(X)
   M = matrix(0,n,n)
   q=1
   for (i in c(1:n)){
     for (j in c(q:n)){
       if (method==1 ){
-        tempstore = Permu_dist(X[[i]],X[[j]],nx=nx,ny=ny,minpoints=minpoints,use.tbar=1,sumfunc=sumfunc,rinterval=rinterval,...)
+        tempstore = Permu_dist(X[[i]],X[[j]],nx=nx,ny=ny,minpoints=minpoints,use.tbar=1,sumfunc=sumfunc,rinterval = rinterval,...)
         M[i,j]=tempstore$statistic
       } else if (method==2){
         M[i,j]=nearest_point_metric(X[[i]],X[[j]],...)
       } else if (method==3){
-        M[i,j]=stDistPP(X[[i]],X[[j]])$distance
+        M[i,j]=stDistPP(X[[i]],X[[j]],...)$distance
       }
       
       M[j,i]=M[i,j]
@@ -220,7 +203,7 @@ distMppp = function(X,nx=4,ny=nx,method=1,minpoints=20,sumfunc=Kest,rinterval=se
   return(M)
 }
 
-
+# We use this function to calculate the confusion matrix for two set of labels. 
 conf_matrix = function(vec1,vec2){
   n = length(vec1)
   TP=0
@@ -246,7 +229,7 @@ conf_matrix = function(vec1,vec2){
   }
   return(matrix(c(TP,FN,FP,TN),2,2,byrow = T))
 }
-
+#This function returns the evaluation value for the cluster made from a agglomerative alg.  
 eval_clust = function(distmatrix,k,true_label,methodhc="average"){
   n=length(methodhc)
   if (n==1){
@@ -276,63 +259,27 @@ eval_clust = function(distmatrix,k,true_label,methodhc="average"){
   
   return(c(acval,randval,Fval))
 }
-
-#setwd("/home/au591455/Rstuff/Results") 
-setwd("C:/Users/simon/Desktop/TestR") 
+path = "C:/Users/simon/Desktop/SpecialeProject/Speciale/Data" # Remember to set your own path 
+setwd(path) 
 
 # we load the data we will test on
-Data =  readRDS(file = "DataPPP.Rdata")
-Matern4a = readRDS(file = "Matern_a.Rdata")
-Matern4b = readRDS(file = "Matern_b.Rdata")
-Clust4a = readRDS(file = "Clust_a.Rdata")
-Clust4b = readRDS(file = "Clust_b.Rdata")
-Clust4c = readRDS(file = "Clust_c.Rdata")
-poistest  = readRDS(file = "poisPPP.Rdata")
+control_data = readRDS("membrane_control_data.Rdata")
+acid_data = readRDS("membrane_acid_data.Rdata")
+rotenone_data = readRDS("membrane_rotenone_data.Rdata")
 
+logpath = "C:/Users/simon/Desktop/SpecialeProject/Speciale" # Remember to add your own logpath 
+path_of_log<-file(logpath)
 
-
-
-
-
-load(file = "intermembrane_particles.rda")
-tempv = c(1:length(intermembrane_particles$pattern))
-for (i in c(1:length(intermembrane_particles$pattern))) {
-  intermembrane_particles$pattern[[i]] =rescale(intermembrane_particles$pattern[[i]],512)
-  tempv[i] = intermembrane_particles$pattern[[i]]$n
-  }
-
-control = intermembrane_particles$pattern[intermembrane_particles$group == "control"]
-acid= intermembrane_particles$pattern[intermembrane_particles$group == "acid"]
-rotenone = intermembrane_particles$pattern[intermembrane_particles$group == "rotenone"]
-
-generate_pp = function(ppp, size,prob){
-  nsim_temp = table(sample(c(1:length(ppp)), size=size, replace =T))
-  temp_data =rthin(ppp[[1]],P=prob,nsim = nsim_temp[1] )
-  for (qq in c(2:length(nsim_temp))) {
-    temp_data =  c(temp_data , rthin(ppp[[qq]],P=prob,nsim = nsim_temp[qq] ))
-  }
-  return(sample(temp_data))
-}
-
-control_data = generate_pp(control,size = 5000,prob = 0.7) 
-acid_data = generate_pp(acid,size = 5000,prob = 0.7) 
-rotenone_data = generate_pp(rotenone,size = 5000,prob = 0.7) 
-
-
-
-
+registerDoParallel(10)  # We define how many cores we want to use. 
 
 name1 ="evalmembraneT.Rdata"
 name2 ="evalmembraneNP.Rdata"
 name3 ="evalmembraneST.Rdata"
 
-registerDoParallel(8)
-rinterval = seq(0,0.125,length.out = 30)
 m=1000
 intval = seq(1,m,10)
-#logpath = "/home/au591455/Rstuff/Results/logHC.txt"
-logpath = "C:/Users/simon/Desktop/TestR/logHC.txt"
-path_of_log<-file(logpath)
+
+
 writeLines("Start UP", path_of_log)
 TrueLabel = c(rep(1,5),rep(2,5),rep(3,5))
 print("Start UP")
@@ -344,15 +291,15 @@ hceval1 <- foreach (i= c(1:10), .combine="cbind", .packages = c("spatstat","clus
 saveRDS(hceval1,file = name1)
 #TTT = readRDS(name1)
 for(j in c(2:50)){
-  #setwd("/home/au591455/Rstuff/Results") 
-  setwd("C:/Users/simon/Desktop/TestR") 
+  setwd(path)
+  
   hceval1temp <- foreach (i= c(intval[j]:(intval[j+1]-1)), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
     vec = c((i*5-4):(i*5))
     MM  = distMppp(c(control_data[vec],acid_data[vec],rotenone_data[vec]),method=1,nx=3 , ny=2  ,minpoints=5)
     eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
   }
   hceval1  =cbind(hceval1,hceval1temp)
-  
+
   saveRDS(hceval1,file = name1)
   tempC = readLines(path_of_log)
   procent = j/50
@@ -372,15 +319,15 @@ hceval1 <- foreach (i= c(1:10), .combine="cbind", .packages = c("spatstat","clus
 saveRDS(hceval1,file = name2)
 #TTT = readRDS(name2)
 for(j in c(2:50)){
-  #setwd("/home/au591455/Rstuff/Results") 
-  setwd("C:/Users/simon/Desktop/TestR") 
+  setwd(path)
+  
   hceval1temp <- foreach (i= c(intval[j]:(intval[j+1]-1)), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
     vec = c((i*5-4):(i*5))
     MM  = distMppp(c(control_data[vec],acid_data[vec],rotenone_data[vec]),method=2 ,minpoints=5)
     eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
   }
   hceval1  =cbind(hceval1,hceval1temp)
-  
+
   saveRDS(hceval1,file = name2)
   tempC = readLines(path_of_log)
   procent = j/50
@@ -398,11 +345,11 @@ hceval1 <- foreach (i= c(1:10), .combine="cbind", .packages = c("spatstat","clus
   eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
 }
 saveRDS(hceval1,file = name3)
-#TTT = readRDS(name1)
-for(j in c(2:50)){
-  #setwd("/home/au591455/Rstuff/Results") 
-  setwd("C:/Users/simon/Desktop/TestR") 
-  hceval1temp <- foreach (i= c(intval[j]:(intval[j+1]-1)), .combine="cbind", .packages = c("spatstat","cluster","fossil")) %dopar% {
+hceval1 = readRDS(name3)
+for(j in c(34:50)){
+  setwd(path) 
+   
+  hceval1temp <- foreach (i= c(intval[j]:(intval[j+1]-1)), .combine="cbind", .packages = c("spatstat","cluster","fossil","ppMeasures")) %dopar% {
     vec = c((i*5-4):(i*5))
     MM  = distMppp(c(control_data[vec],acid_data[vec],rotenone_data[vec]),method=3 ,minpoints=5)
     eval_clust(MM,k=3,true_label =TrueLabel,methodhc = c("single","average","complete" ))
@@ -414,4 +361,4 @@ for(j in c(2:50)){
   procent = j/50
   writeLines(c(tempC,paste(name3,":",procent," % done", Sys.time())),path_of_log)
 }
-close(path_of_log)
+stopImplicitCluster()

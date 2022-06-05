@@ -12,25 +12,23 @@ library("iterators",lib.loc=liblocation )
 library("tictoc",lib.loc=liblocation )
 library("foreach",lib.loc=liblocation )
 library("doParallel",lib.loc=liblocation )
-
+library("ppMeasures",lib.loc=liblocation)
 registerDoParallel(10)
 mm=10
 squares = c(2,3)
-#setwd("/home/au591455/Rstuff/Results") 
-setwd("C:/Users/simon/Desktop/TestR") 
+path = "C:/Users/simon/Desktop/SpecialeProject/Speciale/Data" # Remember to set your own path 
+setwd(path)  
 DataSize= c(5,10,15,20,25,30,35,40)
-poweroftest_size = function(Outlier,Data,DataSize,name,m,squares,newlog = F,minpoints=20){
+poweroftest_size = function(Outlier,Data,DataSize,name,m,squares,newlog = F,minpoints=20,path){
   n = length(Outlier)
-  #logpath = "/home/au591455/Rstuff/Results/log.txt"
-  logpath = "C:/Users/simon/Desktop/TestR/logSize.txt"
+  logpath = "C:/Users/simon/Desktop/SpecialeProject/Speciale/logSize.txt"
   path_of_log<-file(logpath)
   if (newlog){
     writeLines("Start UP", path_of_log)
   }
   
-  
-  studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000)
-  {
+  #This is function supplied by Ute Hahn to run the permutation test for the T stat. 
+  studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000){
     ##### preparations ----------------
     if (is.null(foos1) |  is.null(foos2) ){
       ptt <- list(statistic = NaN, 
@@ -79,7 +77,6 @@ poweroftest_size = function(Outlier,Data,DataSize,name,m,squares,newlog = F,minp
     
     m <- m1+m2
     foos <- cbind(foos1, foos2)
-
     index1 <- cbind(1:m1, replicate(nperm, sample(m, m1)))
     
     # do the calculations the good old fashioned way with sums and sqs, to save time
@@ -128,7 +125,8 @@ poweroftest_size = function(Outlier,Data,DataSize,name,m,squares,newlog = F,minp
   
   
   
-  OutlierPPP_Permu = function(Outlier,PPP,nx,ny=nx,minpoints=20,use.tbar=FALSE,rinterval,nperm=999,sumfunc=Kest,...){
+  #This function is used to run the permutation outlier test.
+  OutlierPPP_Permu = function(Outlier,PPP,nx,ny=nx,minpoints=20,use.tbar=T,rinterval,nperm=999,sumfunc=Kest,...){
     
     grid1 = quadrats(Outlier,nx=nx,ny=ny)
     splitOutlier = split(Outlier,f=grid1)
@@ -150,7 +148,6 @@ poweroftest_size = function(Outlier,Data,DataSize,name,m,squares,newlog = F,minp
       grid2 = quadrats(PPP[[i]],nx=nx,ny=ny)
       splitPP = split(PPP[[i]],f=grid2)
       for(j in c(1:(nx*ny))){
-        #### ==== Comment from Ute: where does j occur in this inner loop? =========        
         if(splitPP[[j]]$n >= minpoints){
           sumfuncR = sumfunc(splitPP[[j]],r=rinterval)$iso
           if (is.null( PPPStat)){
@@ -166,9 +163,11 @@ poweroftest_size = function(Outlier,Data,DataSize,name,m,squares,newlog = F,minp
   }
   
   
+  # We define the interval for the summary function
   rinterval = seq(0,0.125,length.out = 30)
-  ResultpowerM1temp1 <- foreach (i= c(1:m), .combine="cbind", .packages = c("spatstat")) %:%
-    foreach (j= c(1:length(DataSize)), .combine="c", .packages = c("spatstat")) %dopar% {
+  # we run the first m times, so we have some data to work with. After that we save the after the code has run m times. 
+  ResultpowerM1temp1 <- foreach (i= c(1:m), .combine="cbind", .packages = c("spatstat","ppMeasures")) %:%
+    foreach (j= c(1:length(DataSize)), .combine="c", .packages = c("spatstat","ppMeasures")) %dopar% {
       DS1 = DataSize[j]
       DS2 = DS1 -1 
       QQQ = OutlierPPP_Permu(Outlier = Outlier[[i]], PPP = Data[c((i*DS1-DS2):(i*DS1))],rinterval = rinterval, nx=squares[1],ny=squares[2],minpoints =minpoints)
@@ -178,11 +177,11 @@ poweroftest_size = function(Outlier,Data,DataSize,name,m,squares,newlog = F,minp
   for (q in c(2:(n/m))){
     #print(q)
     #setwd("/home/au591455/Rstuff/Results") 
-    setwd("C:/Users/simon/Desktop/TestR") 
+    setwd(path) 
     tempC = readLines(path_of_log)
     writeLines(c(tempC,paste(name,"beginning the ",q," part ", Sys.time())),path_of_log)
-    ResultpowerM1temp1 <- foreach (i= c((q*m-(m-1)):(q*m)), .combine="cbind", .packages = c("spatstat")) %:%
-      foreach (j= c(1:length( DataSize)), .combine="c", .packages = c("spatstat")) %dopar% {
+    ResultpowerM1temp1 <- foreach (i= c((q*m-(m-1)):(q*m)), .combine="cbind", .packages = c("spatstat","ppMeasures")) %:%
+      foreach (j= c(1:length( DataSize)), .combine="c", .packages = c("spatstat","ppMeasures")) %dopar% {
         DS1 = DataSize[j]
         DS2 = DS1 -1 
         QQQ = OutlierPPP_Permu(Outlier = Outlier[[i]], PPP = Data[c((i*DS1-DS2):(i*DS1))],rinterval = rinterval, nx=squares[1],ny=squares[2],minpoints =minpoints)
@@ -201,30 +200,30 @@ poweroftest_size = function(Outlier,Data,DataSize,name,m,squares,newlog = F,minp
 Data =  readRDS(file = "DataPPP.Rdata")
 Matern4a = readRDS(file = "Matern_a.Rdata")
 
-#poweroftest_size(Outlier = Matern4a[1:1000],Data=Data,name ="PowerMaternA_Size.Rdata",DataSize=DataSize,m=mm,squares = squares,newlog=T,minpoints=5 )
+poweroftest_size(Outlier = Matern4a[1:1000],Data=Data,name ="PowerMaternA_Size.Rdata",DataSize=DataSize,m=mm,squares = squares,newlog=T,minpoints =5,path=path )
 
 Matern4b = readRDS(file = "Matern_b.Rdata")
 
-#poweroftest_size(Outlier = Matern4b[1:1000] ,Data=Data,name ="PowerMaternB_Size.Rdata",DataSize=DataSize,m=mm,squares = squares,minpoints=5)
+poweroftest_size(Outlier = Matern4b[1:1000] ,Data=Data,name ="PowerMaternB_Size.Rdata",DataSize=DataSize,m=mm,squares = squares,minpoints =5,path=path )
 
 Clust4a = readRDS(file = "Clust_a.Rdata")
 
-#poweroftest_size(Outlier = Clust4a[1:1000]  ,Data=Data,name ="PowerClusterA_Size.Rdata",DataSize=DataSize,m=mm,squares = squares,minpoints=5 )
+poweroftest_size(Outlier = Clust4a[1:1000]  ,Data=Data,name ="PowerClusterA_Size.Rdata",DataSize=DataSize,m=mm,squares = squares,minpoints =5,path=path )
 
 Clust4b = readRDS(file = "Clust_b.Rdata")
 
-poweroftest_size(Outlier = Clust4b[1:1000]  ,Data=Data,name ="PowerClusterB_Size.Rdata",DataSize=DataSize,m=mm,squares = squares,minpoints=5)
+poweroftest_size(Outlier = Clust4b[1:1000]  ,Data=Data,name ="PowerClusterB_Size.Rdata",DataSize=DataSize,m=mm,squares = squares,minpoints =5,path=path )
 
 
 Clust4c = readRDS(file = "Clust_c.Rdata")
 
-poweroftest_size(Outlier = Clust4c[1:1000]  ,Data=Data,name ="PowerClusterC_Size.Rdata",DataSize=DataSize,m=mm,squares = squares,minpoints=5 )
+poweroftest_size(Outlier = Clust4c[1:1000]  ,Data=Data,name ="PowerClusterC_Size.Rdata",DataSize=DataSize,m=mm,squares = squares,minpoints =5,path=path )
 
 
 
 poistest  = readRDS(file = "poisPPP.Rdata")
 
-poweroftest_size(Outlier = poistest[1:1000] ,Data=Data,name ="PowerpoisTest_Size.Rdata",DataSize=DataSize,m=mm,squares = squares,minpoints =5 )
+poweroftest_size(Outlier = poistest[1:1000] ,Data=Data,name ="PowerpoisTest_Size.Rdata",DataSize=DataSize,m=mm,squares = squares,minpoints =5,path=path )
 
 
 

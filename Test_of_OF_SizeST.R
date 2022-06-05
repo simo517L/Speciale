@@ -21,9 +21,9 @@ squares = list(c(2,2),c(3,2),c(3,3),c(3,4))
 
 DataSize= c(20,25,30,35,40)
 
-#setwd("/home/au591455/Rstuff/Results") 
-setwd("C:/Users/simon/Desktop/TestR")
-powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,method=1,Kinterval = c(5:10)){
+path = "C:/Users/simon/Desktop/SpecialeProject/Speciale/Data" # Remember to set your own path 
+setwd(path) 
+powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,method=1,Kinterval = c(5:10),path){
   if(min(DataSize) < Kinterval[length(Kinterval)] ){
     Kinterval = Kinterval[Kinterval< min(DataSize)]
     print("Kinterval values cannot be bigger then the amount of point patterns")
@@ -31,26 +31,27 @@ powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,m
   if (is.null(n)){
     n = length(Outlier)
   }
-  #tempA = "/home/au591455/Rstuff/Results"
-  tempA = "C:/Users/simon/Desktop/TestR"
-  
   #logpath = "/home/au591455/Rstuff/Results/logOF_S.txt"
-  logpath = "C:/Users/simon/Desktop/TestR/logOF_S.txt"
+  logpath = "C:/Users/simon/Desktop/SpecialeProject/Speciale/logOF_S.txt"
   path_of_log<-file(logpath)
   if (newlog){
     writeLines(paste("Start UP",Sys.time()), path_of_log)
   }
   
   
+  # We define the function, there will be needed. 
+  
+  # This is a wrapper function for stDist, so it works on point patterns. 
   stDistPP = function(X,Y,...){
     p1 = cbind(X$x,X$y)
     p2 = cbind(Y$x,Y$y)
-    return(stDist(p1, p2,alg="IMA",pm=1,bypassCheck=T, ...))
+    return(stDist(p1, p2,pm=1,by,alg="IMA",bypassCheck=T, ...))
   }
+  
+  # This is function supplied by Ute Hahn to run the permutation test for the T stat. 
   studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000){
     ##### preparations ----------------
     if (is.null(foos1) |  is.null(foos2) ){
-      print("foos1 or foos2 are null")
       ptt <- list(statistic = NaN, 
                   p.value = NaN, 
                   alternative = "foos1 or foos2 are null", 
@@ -62,7 +63,6 @@ powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,m
     n <- dim(foos1)[1]
     m1 <- dim(foos1)[2]
     if (m1 < 2){
-      print("foos1 is not a matrix")
       datname <- paste( deparse(substitute(foos1)),"and", deparse(substitute(foos2)))
       ptt <- list(statistic = NaN, 
                   p.value = NaN, 
@@ -75,7 +75,6 @@ powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,m
       
     } # need at least two per group
     if(dim(foos2)[1] != n){
-      print("foos2 does not have the same lenght as foos1")
       datname <- paste( deparse(substitute(foos1)),"and", deparse(substitute(foos2)))
       ptt <- list(statistic = NaN, 
                   p.value = NaN, 
@@ -87,7 +86,6 @@ powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,m
     } # dimensions
     m2 <- dim(foos2)[2]
     if (m2 < 2){
-      print("foos2 is not a matrix")
       datname <- paste( deparse(substitute(foos1)),"and", deparse(substitute(foos2)))
       ptt <- list(statistic = NaN, 
                   p.value = NaN, 
@@ -97,59 +95,45 @@ powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,m
       class(ptt) <- "htest"
       return(ptt)
     } # need at least two per group
+    
     m <- m1+m2
     foos <- cbind(foos1, foos2)
-    # get the permutations. 
-    # If m1 == m2, break the symmetry and save half time and memory!
-    
-    allcomb <- is.null(nperm)
-    ncomb <- if (m1 == m2) choose(m-1, m1-1) else choose(m, m1)
-    # if nperm is larger than the actual number of combinations, also use all of them
-    if (!allcomb)
-    {
-      # ncomb <- if (m1 == m2) choose(m-1, m1-1) else choose(m, m1)
-      if (ncomb < (nperm + 1)) allcomb <- TRUE
-    }
-    if (allcomb) 
-    {
-      if (m1 == m2) index1 <- rbind(1, combn(m - 1, m1 - 1) + 1)
-      else index1 <- combn(m, m1)
-    } else {
-      if (m1 == m2) index1 <- rbind(1, replicate(nperm, sample(m - 1, m1 - 1) + 1)) 
-      else index1 <- replicate(nperm, sample(m, m1)) 
-      index1 <- cbind((1 : m1), index1) # the first is the original
-    }
+    index1 <- cbind(1:m1, replicate(nperm, sample(m, m1)))
     
     # do the calculations the good old fashioned way with sums and sqs, to save time
     
+    foos_sq <- foos^2
     SX. <- apply (foos, 1, sum)
-    SXX. <- apply (foos^2, 1, sum)
+    SXX. <- apply (foos_sq, 1, sum)
     
-    Tstatistic <- function (ind) # could be further optimized in symmetric case 
+    Tstatistic <- function (ind) # 
     {
       SX1 <- apply(foos[, ind], 1, sum)
-      SXX1 <- apply(foos[, ind]^2, 1, sum)
+      SXX1 <- apply(foos_sq[, ind], 1, sum)
       SX2 <- SX. - SX1
       SXX2 <- SXX. - SXX1
       mu1 <- SX1 / m1 
       mu2 <- SX2 / m2
-      ss1 <- (SXX1 - (SX1^2 / m1)) / ((m1-1) / m1)
-      ss2 <- (SXX2 - (SX2^2 / m2)) / ((m2-1) / m2)
+      ss1 <- (SXX1 - (SX1^2 / m1)) / ((m1-1) * m1)
+      ss2 <- (SXX2 - (SX2^2 / m2)) / ((m2-1) * m2)
       
-      if (use.tbar) return (sum((mu1 -mu2)^2) / sum((ss1 + ss2))) else 
-        return (mean((mu1 -mu2)^2 / (ss1 + ss2), na.rm=T))
+      ss <- ss1 + ss2
+      meandiff_sq <- (mu1 - mu2)^2
+      
+      result <- if (use.tbar) (sum(meandiff_sq) / sum(ss)) 
+      else (mean(meandiff_sq / ss, na.rm=T))
+      result
     }
     
     Tvals <- apply(index1, 2, Tstatistic)
     
-    pval <- mean(Tvals >= Tvals[1])           
+    pval <- mean(Tvals >= Tvals[1], na.rm = TRUE)           
     stat <- Tvals[1]
     names(stat) <- if(use.tbar) "Tbar" else "T"
     datname <- paste( deparse(substitute(foos1)),"and", deparse(substitute(foos2)))
     method <- c(paste("Studentized two sample permutation test for fda, using T",
                       ifelse(use.tbar, "bar", ""), sep=""),
-                ifelse(allcomb, paste("exact test, using all",ncomb,"permutations (combinations)"), 
-                       paste("using",nperm,"randomly selected permuations")))
+                paste("using",nperm,"randomly selected permuations"))
     alternative <- "samples not exchangeable"
     ptt <- list(statistic = stat, 
                 p.value = pval, 
@@ -160,7 +144,9 @@ powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,m
     return(ptt)
   }
   
-  OutlierPPP_Permu =function(PPP1,PPP2,nx,ny=nx,minpoints=20,use.tbar=FALSE,rinterval,nperm=1,sumfunc=Kest,...){
+  
+  # This is the function we use to calculate the T stat. distance for the distMPPP
+  Permu_dist = function(PPP1,PPP2,nx,ny=nx,minpoints=20,use.tbar=FALSE,rinterval,nperm=1,sumfunc=Kest,...){
     
     grid1 = quadrats(PPP1,nx=nx,ny=ny)
     splitPPP1 = split(PPP1,f=grid1)
@@ -192,7 +178,7 @@ powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,m
     return(studpermut.test.Ute(foos1 = ResultPPP1,foos2= ResultPPP2,use.tbar=use.tbar,nperm=nperm))
   }
   
-  
+  # This function calculate the nearest point distance.
   nearest_pointdist = function(X,Y){
     LX = coords(X)
     LY = coords(Y)
@@ -206,25 +192,24 @@ powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,m
     }
     return(result)
   }
+  #This is function used to calculate the symmetrical nearest point distance
   nearest_point_metric = function(X,Y){
     return(nearest_pointdist(X,Y)+nearest_pointdist(Y,X))
   }
-  
-  distMppp = function(X,nx=3,ny=nx,method=1,minpoints=5,sumfunc=Kest){
-    
+  #The distMppp function was made to calculate distance matrices for a set of point patterns
+  distMppp = function(X,nx=3,ny=nx,method=1,minpoints=20,sumfunc=Kest,rinterval = seq(0,0.125,length.out = 30),...){
     n = length(X)
     M = matrix(0,n,n)
     q=1
     for (i in c(1:n)){
       for (j in c(q:n)){
         if (method==1 ){
-          tempstore = OutlierPPP_Permu(X[[i]],X[[j]],nx=nx,ny=ny,minpoints=minpoints,use.tbar=1,sumfunc=sumfunc,nperm=1,rinterval = seq(0,0.125,length.out = 30))
+          tempstore = Permu_dist(X[[i]],X[[j]],nx=nx,ny=ny,minpoints=minpoints,use.tbar=1,sumfunc=sumfunc,rinterval = rinterval,...)
           M[i,j]=tempstore$statistic
         } else if (method==2){
-          M[i,j]=nearest_point_metric(X[[i]],X[[j]])
+          M[i,j]=nearest_point_metric(X[[i]],X[[j]],...)
         } else if (method==3){
-        tempstore = stDistPP(X[[i]],X[[j]])
-         M[i,j]=tempstore$distance
+          M[i,j]=stDistPP(X[[i]],X[[j]],...)$distance
         }
         
         M[j,i]=M[i,j]
@@ -234,16 +219,19 @@ powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,m
     return(M)
   }
   
+  # This calculates the K-distance
   K_dist = function(M,k,p){
     dist_to_point = M[p,]
     dist_to_point = sort(dist_to_point)
     return(dist_to_point[k])
   }
+  # This calculates the neighborhood of a K-distance
   K_dist_neighborhood = function(M,k,p){
     K_dist_Result=K_dist(M,k,p)
     dist_to_point = M[p,]
     return(which(dist_to_point <= K_dist_Result))
   }
+  # This calculates local reachability density.
   lrd = function(M,k,p){
     PP_in_neighborhood = K_dist_neighborhood(M,k,p)
     Result= 0
@@ -252,6 +240,7 @@ powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,m
     }
     return(1/( Result/length(PP_in_neighborhood))) 
   }
+  # This function calculate the local outlier factor. 
   l_outlier_factor = function(M,k,p){
     PP_in_neighborhood = K_dist_neighborhood(M,k,p)
     Result= 0
@@ -261,7 +250,7 @@ powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,m
     }
     return( Result/length(PP_in_neighborhood)) 
   }
-  
+  # This function will calculate the LOF value over a interval of $k$'s
   outlier_factors_PP = function(X,k,nx,ny=ny,method=1,minpoints=20){
     M = distMppp(X,nx=nx,ny=ny,method=method,minpoints=minpoints)
     n = length(X)
@@ -287,11 +276,11 @@ powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,m
       }}
     return(Result)
   }
-  
+  #This function uses the LOF values to calculate a p-value. 
   Test_outlier_OF = function(Outlier,PPP,nx,ny=nx,method=1,minpoints=20,Kinterval){
     X = c(PPP,list(Outlier))
     if (length(X) < max(Kinterval)){
-      Kinterval = Kinterval[Kinterval < length(X)]
+      Kinterval = Kinterval[Kinterval< length(X)]
       print("Kinterval values cannot be bigger then the amount of point patterns")
     }
     n = length(PPP)
@@ -310,7 +299,7 @@ powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,m
   
   ResultpowerM1 = ResultpowerM1temp1
   for (q in c(2:(n/m))){
-    setwd(tempA) 
+    setwd(path) 
     tempC = readLines(path_of_log)
     writeLines(c(tempC,paste(name,"beginning the ",q," part ", Sys.time())),path_of_log)
     ResultpowerM1temp1 <- foreach (i= c((q*m-(m-1)):(q*m)), .combine="cbind", .packages = c("spatstat","ppMeasures"))%:%
@@ -324,33 +313,30 @@ powertest_OF = function(Outlier,Data,name,n=NULL,m,squares,newlog = F,DataSize,m
     tempC = readLines(path_of_log)
     procent = q*m/n
     writeLines(c(tempC,paste(name,":",procent," % done", Sys.time())),path_of_log)
-  }
+  }}
   close(path_of_log)
-}
-#nn =10000
-#Data = rpoispp(100,nsim=(4*nn+40))
-#saveRDS(Data,file = "DataPPP.Rdata")
+
+
 Data =  readRDS(file = "DataPPP.Rdata")
 
 Matern4a = readRDS(file = "Matern_a.Rdata")
-#powertest_OF(Outlier = Matern4a,Data=Data,name ="Size_MaternA_OFST.Rdata",n=500,method = 3,m=mm,squares =c(2,3),DataSize=DataSize,newlog=T)
-#tempdat = readRDS(file = "Size_MaternA_OFST.Rdata")
+powertest_OF(Outlier = Matern4a,Data=Data,name ="Size_MaternA_OFST.Rdata",n=500,method = 3,m=mm,squares =c(2,3), path=path, DataSize=DataSize,newlog=T)
 
 Matern4b = readRDS(file = "Matern_b.Rdata")
-#powertest_OF(Outlier = Matern4b,Data=Data,name ="Size_MaternB_OFST.Rdata",n=500,method = 3,m=mm,squares = c(2,3),DataSize=DataSize,newlog=T)
+powertest_OF(Outlier = Matern4b,Data=Data,name ="Size_MaternB_OFST.Rdata",n=500,method = 3,m=mm,squares = c(2,3),path=path,DataSize=DataSize,newlog=T)
 
 Clust4a = readRDS(file = "Clust_a.Rdata")
-powertest_OF(Outlier = Clust4a ,Data=Data,name ="Size_ClusterA_OFST.Rdata",n=500,method = 3,m=mm,squares = c(2,3),DataSize=DataSize )
+powertest_OF(Outlier = Clust4a ,Data=Data,name ="Size_ClusterA_OFST.Rdata",n=500,method = 3,m=mm,squares = c(2,3),path=path,DataSize=DataSize )
 
 Clust4b = readRDS(file = "Clust_b.Rdata")
-powertest_OF(Outlier = Clust4b ,Data=Data,name ="Size_ClusterB_OFST.Rdata",n=500,method = 3,m=mm,squares = c(2,3),DataSize=DataSize)
+powertest_OF(Outlier = Clust4b ,Data=Data,name ="Size_ClusterB_OFST.Rdata",n=500,method = 3,m=mm,squares = c(2,3),path=path,DataSize=DataSize)
 
 Clust4c = readRDS(file = "Clust_c.Rdata")
-powertest_OF(Outlier = Clust4c ,Data=Data,name ="Size_ClusterC_OFST.Rdata",n=500,method = 3,m=mm,squares = c(2,3),DataSize=DataSize )
+powertest_OF(Outlier = Clust4c ,Data=Data,name ="Size_ClusterC_OFST.Rdata",n=500,method = 3,m=mm,squares = c(2,3),path=path,DataSize=DataSize )
 
 
 poistest  = readRDS(file = "poisPPP.Rdata")
-powertest_OF(Outlier = poistest ,Data=Data,name ="Size_pois_OFST.Rdata",n=500,method = 3,m=mm,squares = c(2,3),DataSize=DataSize )
+powertest_OF(Outlier = poistest ,Data=Data,name ="Size_pois_OFST.Rdata",n=500,method = 3,m=mm,squares = c(2,3),path=path,DataSize=DataSize )
 
 
 

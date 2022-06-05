@@ -3,12 +3,16 @@ library(spatstat)
 library(utils)
 library(ppMeasures)
 
-#we define function there will be needed
+# We define the function, there will be needed. 
+
+# This is a wrapper function for stDist, so it works on point patterns. 
 stDistPP = function(X,Y,...){
   p1 = cbind(X$x,X$y)
   p2 = cbind(Y$x,Y$y)
-  return(stDist(p1, p2,pm=1,bypassCheck=T, ...))
+  return(stDist(p1, p2,pm=1,by,alg="IMA",bypassCheck=T, ...))
 }
+
+# This is function supplied by Ute Hahn to run the permutation test for the T stat. 
 studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000){
   ##### preparations ----------------
   if (is.null(foos1) |  is.null(foos2) ){
@@ -58,27 +62,6 @@ studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000){
   
   m <- m1+m2
   foos <- cbind(foos1, foos2)
-  # get the permutations. 
-  # If m1 == m2, break the symmetry and save half time and memory!
-  # 
-  # allcomb <- is.null(nperm)
-  # ncomb <- if (m1 == m2) choose(m-1, m1-1) else choose(m, m1)
-  # if nperm is larger than the actual number of combinations, also use all of them
-  # if (!allcomb)
-  # {
-  # ncomb <- if (m1 == m2) choose(m-1, m1-1) else choose(m, m1)
-  #  if (ncomb < (nperm + 1)) allcomb <- TRUE
-  # }
-  # if (allcomb)
-  #   {
-  #   if (m1 == m2) index1 <- rbind(1, combn(m - 1, m1 - 1) + 1)
-  #   else index1 <- combn(m, m1)
-  # } else {
-  #   if (m1 == m2) index1 <- rbind(1, replicate(nperm, sample(m - 1, m1 - 1) + 1)) 
-  #   else index1 <- replicate(nperm, sample(m, m1)) 
-  #   index1 <- cbind((1 : m1), index1) # the first is the original
-  # }
-  # 
   index1 <- cbind(1:m1, replicate(nperm, sample(m, m1)))
   
   # do the calculations the good old fashioned way with sums and sqs, to save time
@@ -125,6 +108,8 @@ studpermut.test.Ute <- function (foos1, foos2, use.tbar=FALSE, nperm = 25000){
   return(ptt)
 }
 
+
+# This is the function we use to calculate the T stat. distance for the distMPPP
 Permu_dist = function(PPP1,PPP2,nx,ny=nx,minpoints=20,use.tbar=FALSE,rinterval,nperm=1,sumfunc=Kest,...){
   
   grid1 = quadrats(PPP1,nx=nx,ny=ny)
@@ -157,6 +142,7 @@ Permu_dist = function(PPP1,PPP2,nx,ny=nx,minpoints=20,use.tbar=FALSE,rinterval,n
   return(studpermut.test.Ute(foos1 = ResultPPP1,foos2= ResultPPP2,use.tbar=use.tbar,nperm=nperm))
 }
 
+# This function calculate the nearest point distance.
 nearest_pointdist = function(X,Y){
   LX = coords(X)
   LY = coords(Y)
@@ -170,24 +156,24 @@ nearest_pointdist = function(X,Y){
   }
   return(result)
 }
+#This is function used to calculate the symmetrical nearest point distance
 nearest_point_metric = function(X,Y){
   return(nearest_pointdist(X,Y)+nearest_pointdist(Y,X))
 }
-
-distMppp = function(X,nx=3,ny=nx,method=1,minpoints=20,sumfunc=Kest,rinterval=seq(0,0.125,length.out = 30),...){
-  
+#The distMppp function was made to calculate distance matrices for a set of point patterns
+distMppp = function(X,nx=3,ny=nx,method=1,minpoints=20,sumfunc=Kest,rinterval = seq(0,0.125,length.out = 30),...){
   n = length(X)
   M = matrix(0,n,n)
   q=1
   for (i in c(1:n)){
     for (j in c(q:n)){
       if (method==1 ){
-        tempstore = Permu_dist(X[[i]],X[[j]],nx=nx,ny=ny,minpoints=minpoints,use.tbar=1,sumfunc=sumfunc,rinterval=rinterval,...)
+        tempstore = Permu_dist(X[[i]],X[[j]],nx=nx,ny=ny,minpoints=minpoints,use.tbar=1,sumfunc=sumfunc,rinterval = rinterval,...)
         M[i,j]=tempstore$statistic
       } else if (method==2){
         M[i,j]=nearest_point_metric(X[[i]],X[[j]],...)
       } else if (method==3){
-       M[i,j]=stDistPP(X[[i]],X[[j]],...)$distance
+        M[i,j]=stDistPP(X[[i]],X[[j]],...)$distance
       }
       
       M[j,i]=M[i,j]
@@ -195,51 +181,6 @@ distMppp = function(X,nx=3,ny=nx,method=1,minpoints=20,sumfunc=Kest,rinterval=se
     q = q+1
   }
   return(M)
-}
-
-stDistPP(Data[[1]],Data[[2]])
-
-R_10 = c(1:1000)
-for (i in c(1:1000)){
-  X = rpoint(10)
-  Y = rpoint(10)
-  Z = rpoint(10)
-  Result =  stDistPP(X,Y,pm=1,bypassCheck=T)$distance +stDistPP(Y,Z,pm=1,bypassCheck=T)$distance - stDistPP (X,Z,pm=1,bypassCheck=T)$distance
-  R_10[i] = Result < 0
-  if (Result < 0){
-    X10 = X
-    Y10 = Y
-    Z10 = Z
-  }
-}
-
-R_3 = c(1:1000)
-for (i in c(1:1000)){
-  X = rpoint(3)
-  Y = rpoint(3)
-  Z = rpoint(3)
-  Result =  stDistPP(X,Y,pm=1,bypassCheck=T)$distance +stDistPP(Y,Z,pm=1,bypassCheck=T)$distance - stDistPP (X,Z,pm=1,bypassCheck=T)$distance
-  R_3[i] = Result < 0
-  if (Result < 0){
-    X3 = X
-    Y3 = Y
-    Z3 = Z
-  }
-}
-sum(R_3)
-
-R_100 = c(1:1000)
-for (i in c(1:1000)){
-  X = rpoint(100)
-  Y = rpoint(100)
-  Z = rpoint(100)
-  Result =  stDistPP(X,Y,pm=1,bypassCheck=T)$distance +stDistPP(Y,Z,pm=1,bypassCheck=T)$distance - stDistPP (X,Z,pm=1,bypassCheck=T)$distance
-  R_100[i] = Result < 0
-  if (Result < 0){
-    X3 = X
-    Y3 = Y
-    Z3 = Z
-  }
 }
 
 
@@ -261,6 +202,8 @@ lrd = function(M,k,p){
   }
   return(1/( Result/length(PP_in_neighborhood))) 
 }
+
+
 l_outlier_factor = function(M,k,p){
   PP_in_neighborhood = K_dist_neighborhood(M,k,p)
   Result= 0
@@ -272,7 +215,7 @@ l_outlier_factor = function(M,k,p){
 }
 
 
-
+#This function will calculate the LOF value over a interval of $k$'s, for some distance matrix made from a set of point patterns $X$.
 outlier_factors_PP = function(X,k,nx,ny=ny,method=1,minpoints=20,...){
   M = distMppp(X,nx=nx,ny=ny,method=method,minpoints=minpoints,...)
   n = length(X)
@@ -359,59 +302,6 @@ par(mfrow=c(1,1))
 
 
 
-
-TestNorm = ppp(x=rnorm(100),y=rnorm(100),window = owin(c(-2,2),c(-2,2)))
-M_Norm = crossdist(TestNorm,TestNorm)
-k=c(2:50)
-n = TestNorm$n
-m = length(k)
-Result = matrix(0,nrow = n,ncol = m)
-colnames(Result) <- k
-for (i in  c(1:m)){
-  for (j in c(1:n)){
-    Result[j,i] = l_outlier_factor(M_Norm,k[i],j)
-  }}
-plot_k(Result, c(2:50))
-
-TestNorm2 = ppp(x=rnorm(400),y=rnorm(400),window = owin(c(-4,4),c(-4,4)))
-M_Norm2 = crossdist(TestNorm2,TestNorm2)
-k=c(2:50)
-n = TestNorm2$n
-m = length(k)
-Result2 = matrix(0,nrow = n,ncol = m)
-colnames(Result2) <- k
-for (i in  c(1:m)){
-  for (j in c(1:n)){
-    Result2[j,i] = l_outlier_factor(M_Norm2,k[i],j)
-  }}
-plot_k(Result2, c(2:50))
-
-
-Mst = distMppp(Data[1:100],method = 3,pm=1,bypassCheck=T)
-loc1 <- cmdscale(Mst)
-x1 <- loc1[, 1]
-y1 <- loc1[, 2]
-plot(x1, y1, xlab = "", ylab = "",main = "cmdscale(Mst)")
-
-Mnn = distMppp(Data[1:100],method = 2)
-loc2 <- cmdscale(Mnn)
-x2 <- loc2[, 1]
-y2 <- loc2[, 2] 
-
-MT = distMppp(Data[1:100],method = 1,s)
-loc3 <- cmdscale(MT)
-x3 <- loc2[, 1]
-y3 <- loc2[, 2] 
-
-marks2 = OF_nn[,25]
-marks2[marks2<1] = 1
-ppnn = ppp(x=x2,y=y2,marks = log(marks2),window = owin(range(x2),range(y2)))
-plot(ppnn,)
-plot(x2, y2, xlab = "", ylab = "",main = "cmdscale(Mnn)")
-
-
-
-
 #makes plot to show problem with small k value
 
 TESTPPP = clickppp()
@@ -439,7 +329,7 @@ plot(TESTPPP,main = "k=10")
 par(mfrow=c(1,1))
 
 
-#makes plot to show problem with small k value
+#makes plot to show problem with big k value
 
 TESTPPP2 = clickppp()
 TESTDIST2 = crossdist(TESTPPP2,TESTPPP2)
